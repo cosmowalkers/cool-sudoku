@@ -2,11 +2,13 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Difficulty } from "@/lib/sudoku";
+import { useAchievementStore } from "@/stores/achievement-store";
 
 export interface GameResult {
   difficulty: Difficulty;
   elapsedTime: number;
   mistakes: number;
+  hintsUsed: number;
   completedAt: string; // ISO string
 }
 
@@ -24,26 +26,94 @@ interface OverallStats {
 
 interface StatsState {
   history: GameResult[];
+  currentStreak: number;
+  bestStreak: number;
+  lastCompletedDate: string | null; // "YYYY-MM-DD"
+  lastMilestone: number | null;
   recordGame: (result: Omit<GameResult, "completedAt">) => void;
+  clearMilestone: () => void;
+}
+
+function getYesterday(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
 }
 
 export const useStatsStore = create<StatsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       history: [],
+      currentStreak: 0,
+      bestStreak: 0,
+      lastCompletedDate: null,
+      lastMilestone: null,
       recordGame: (result) => {
         const newEntry: GameResult = {
           ...result,
           completedAt: new Date().toISOString(),
         };
+        const today = new Date().toISOString().split("T")[0];
+        const { lastCompletedDate, currentStreak, bestStreak } = get();
+
+        let newStreak = currentStreak;
+
+        if (lastCompletedDate === today) {
+          // 同一天，不变
+        } else if (lastCompletedDate === getYesterday()) {
+          // 昨天完成过，连胜+1
+          newStreak = currentStreak + 1;
+        } else {
+          // 更早或从未完成，重置为1
+          newStreak = 1;
+        }
+
+        const newBest = Math.max(bestStreak, newStreak);
+
+        const milestones = [3, 7, 14, 30, 100];
+        const hitMilestone = milestones.includes(newStreak) && newStreak > currentStreak;
+
         set((state) => ({
           history: [newEntry, ...state.history].slice(0, 100),
+          currentStreak: newStreak,
+          bestStreak: newBest,
+          lastCompletedDate: today,
+          lastMilestone: hitMilestone ? newStreak : null,
         }));
+
+        setTimeout(() => {
+          useAchievementStore.getState().checkAchievements();
+        }, 100);
       },
+      clearMilestone: () => set({ lastMilestone: null }),
     }),
     {
       name: "stats-store",
       storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0) {
+          const history = persistedState?.history || [];
+          let streak = 0;
+          let bestStreak = 0;
+          let lastDate: string | null = null;
+
+          if (history.length > 0) {
+            lastDate = history[0]?.completedAt?.split("T")[0] || null;
+            streak = 1;
+            bestStreak = 1;
+          }
+
+          return {
+            ...persistedState,
+            currentStreak: streak,
+            bestStreak: bestStreak,
+            lastCompletedDate: lastDate,
+            lastMilestone: null,
+          };
+        }
+        return persistedState as StatsState;
+      },
     }
   )
 );
@@ -61,51 +131,10 @@ export function getStatsByDifficulty(history: GameResult[], difficulty: Difficul
 }
 
 export function getOverallStats(history: GameResult[]): OverallStats {
-  if (history.length === 0) {
-    return { totalPlayed: 0, currentStreak: 0, bestStreak: 0 };
-  }
-
-  // 按自然日去重
-  const daySet = new Set<string>();
-  history.forEach((g) => {
-    const day = g.completedAt.split("T")[0];
-    daySet.add(day);
-  });
-
-  // currentStreak: 从今天开始连续天数
-  const today = new Date().toISOString().split("T")[0];
-  const days = Array.from(daySet).sort().reverse();
-  let streak = 0;
-  for (let i = 0; i < days.length; i++) {
-    const expected = new Date(today);
-    expected.setDate(expected.getDate() - i);
-    const expectedStr = expected.toISOString().split("T")[0];
-    if (days[i] === expectedStr) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-
-  // bestStreak: 历史最长连续天数
-  const sortedDays = Array.from(daySet).sort();
-  let tempStreak = 1;
-  let bestStreak = 1;
-  for (let i = 1; i < sortedDays.length; i++) {
-    const prev = new Date(sortedDays[i - 1]);
-    const curr = new Date(sortedDays[i]);
-    const diff = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-    if (diff === 1) {
-      tempStreak++;
-      bestStreak = Math.max(bestStreak, tempStreak);
-    } else {
-      tempStreak = 1;
-    }
-  }
-
+  const state = useStatsStore.getState();
   return {
     totalPlayed: history.length,
-    currentStreak: streak,
-    bestStreak,
+    currentStreak: state.currentStreak,
+    bestStreak: state.bestStreak,
   };
 }

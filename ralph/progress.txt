@@ -1,4 +1,4 @@
-# Ralph Progress - Cool Sudoku
+# Ralph Progress - Cool Sudoku Experience Upgrade
 
 ## Current Status
 Starting implementation.
@@ -7,7 +7,8 @@ Starting implementation.
 (none yet)
 
 ## Notes
-- Branch: ralph/implement-sudoku-app
-- Total stories: 26
-- Design system: design-system/MASTER.md
-- Full spec: openspec/changes/implement-sudoku-app/
+- Branch: ralph/experience-upgrade
+- Total stories: 17
+- Design spec: docs/superpowers/specs/2026-04-30-experience-upgrade-design.md
+- OpenSpec: openspec/changes/experience-upgrade/
+- Previous run archived: ralph/archive/2026-04-30-implement-sudoku-app/

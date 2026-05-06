@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useStatsStore, getOverallStats, getStatsByDifficulty, type GameResult } from "@/stores/stats-store";
+import { useAchievementStore, ACHIEVEMENTS } from "@/stores/achievement-store";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation, useLocaleStore } from "@/lib/i18n";
+import { Volume2, VolumeX } from "lucide-react-native";
 import type { Difficulty } from "@/lib/sudoku";
 
 function formatTime(seconds: number): string {
@@ -54,7 +56,12 @@ export default function StatsScreen() {
     { key: "expert", label: t("diff.expert") },
   ];
 
+  const isMuted = useLocaleStore((s) => s.isMuted);
+  const toggleMute = useLocaleStore((s) => s.toggleMute);
+
   const history = useStatsStore((s) => s.history);
+  const unlockedIds = useAchievementStore((s) => s.unlockedIds);
+  const unlockedDates = useAchievementStore((s) => s.unlockedDates);
   const [activeTab, setActiveTab] = useState<Difficulty | "all">("all");
 
   const overall = getOverallStats(history);
@@ -70,9 +77,15 @@ export default function StatsScreen() {
       <View style={[styles.container, styles.center, { backgroundColor: colors.bg }]}>
         <Text style={[styles.emptyTitle, { color: colors.text }]}>{t("stats.noGames")}</Text>
         <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>{t("stats.startPlaying")}</Text>
-        <Pressable onPress={toggleLocale} style={[styles.langButton, { borderColor: colors.border }]}>
-          <Text style={[styles.langButtonText, { color: colors.textMuted }]}>{t("lang.switch")}</Text>
-        </Pressable>
+        <View style={styles.settingsRow}>
+          <Pressable onPress={toggleMute} style={[styles.langButton, { borderColor: colors.border }]}>
+            {isMuted ? <VolumeX size={16} color={colors.textMuted} /> : <Volume2 size={16} color={colors.textMuted} />}
+            <Text style={[styles.langButtonText, { color: colors.textMuted }]}>{isMuted ? t("settings.mute") : t("settings.unmute")}</Text>
+          </Pressable>
+          <Pressable onPress={toggleLocale} style={[styles.langButton, { borderColor: colors.border }]}>
+            <Text style={[styles.langButtonText, { color: colors.textMuted }]}>{t("lang.switch")}</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
@@ -157,12 +170,48 @@ export default function StatsScreen() {
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>{t("stats.noDiffGames")}</Text>
             </View>
           }
+          ListFooterComponent={
+            <View style={styles.achievementSection}>
+              <Text style={[styles.achievementTitle, { color: colors.text }]}>
+                {t("achievement.progress", { count: unlockedIds.length })}
+              </Text>
+              <View style={styles.achievementGrid}>
+                {ACHIEVEMENTS.map((a) => {
+                  const unlocked = unlockedIds.includes(a.id);
+                  return (
+                    <Pressable
+                      key={a.id}
+                      style={[styles.achievementItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                      onPress={() => {
+                        if (unlocked) {
+                          Alert.alert(t(a.nameKey), `${t(a.descKey)}\n\n${t("achievement.unlockedOn", { date: unlockedDates[a.id] || "" })}`);
+                        }
+                      }}
+                    >
+                      <Text style={[styles.achievementIcon, !unlocked && styles.achievementLocked]}>
+                        {unlocked ? a.icon : "?"}
+                      </Text>
+                      <Text style={[styles.achievementName, { color: unlocked ? colors.text : colors.textMuted }]} numberOfLines={1}>
+                        {unlocked ? t(a.nameKey) : "???"}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          }
         />
       </View>
 
-      <Pressable onPress={toggleLocale} style={styles.langButton}>
-        <Text style={styles.langButtonText}>{t("lang.switch")}</Text>
-      </Pressable>
+      <View style={styles.settingsRow}>
+        <Pressable onPress={toggleMute} style={[styles.langButton, { borderColor: colors.border }]}>
+          {isMuted ? <VolumeX size={16} color={colors.textMuted} /> : <Volume2 size={16} color={colors.textMuted} />}
+          <Text style={[styles.langButtonText, { color: colors.textMuted }]}>{isMuted ? t("settings.mute") : t("settings.unmute")}</Text>
+        </Pressable>
+        <Pressable onPress={toggleLocale} style={[styles.langButton, { borderColor: colors.border }]}>
+          <Text style={[styles.langButtonText, { color: colors.textMuted }]}>{t("lang.switch")}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -194,6 +243,14 @@ const styles = StyleSheet.create({
   historyRight: { flexDirection: "row", alignItems: "center", gap: 12 },
   historyTime: { fontSize: 14, fontWeight: "600", color: "#0F172A", fontVariant: ["tabular-nums"] },
   historyMistakes: { fontSize: 12, color: "#64748B", width: 40 },
-  langButton: { alignSelf: "center", padding: 12, borderRadius: 8, borderWidth: 1, borderColor: "#E2E8F0", marginTop: 16, marginBottom: 16 },
+  settingsRow: { flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 16, marginBottom: 16 },
+  langButton: { flexDirection: "row", alignItems: "center", gap: 6, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: "#E2E8F0" },
   langButtonText: { fontSize: 14, fontWeight: "500", color: "#64748B" },
+  achievementSection: { paddingHorizontal: 0, paddingTop: 16, paddingBottom: 8 },
+  achievementTitle: { fontSize: 16, fontWeight: "600", marginBottom: 12 },
+  achievementGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  achievementItem: { width: "30%", aspectRatio: 1, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center", padding: 8 },
+  achievementIcon: { fontSize: 24, marginBottom: 4 },
+  achievementLocked: { opacity: 0.3 },
+  achievementName: { fontSize: 10, textAlign: "center" },
 });

@@ -1,12 +1,22 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, StyleSheet, useWindowDimensions } from "react-native";
 import { Cell } from "./Cell";
+import { useGameStore } from "@/stores/game-store";
 
 const BOARD_PADDING = 16;
 const THICK_BORDER = 2;
 
 export function Board() {
   const { width: screenWidth } = useWindowDimensions();
+  const completedGroups = useGameStore((s) => s.completedGroups);
+  const clearCompletedGroups = useGameStore((s) => s.clearCompletedGroups);
+
+  useEffect(() => {
+    if (completedGroups.length > 0) {
+      const timer = setTimeout(() => clearCompletedGroups(), 350);
+      return () => clearTimeout(timer);
+    }
+  }, [completedGroups]);
   const boardWidth = screenWidth - BOARD_PADDING * 2;
   const cellSize = Math.floor((boardWidth - 4 * THICK_BORDER) / 9);
 

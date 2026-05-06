@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
+import { playSound } from "@/lib/audio";
 import type { Board, CellState, Coordinate, Difficulty, GameBoard } from "@/lib/sudoku";
 import { createPuzzle, isComplete } from "@/lib/sudoku";
 import { useStatsStore } from "@/stores/stats-store";
@@ -136,6 +137,8 @@ interface GameState {
   selectedCell: Coordinate | null;
   isNotesMode: boolean;
   isGenerating: boolean;
+  lastErrorCell: Coordinate | null;
+  completedGroups: { type: 'row' | 'col' | 'box'; index: number }[];
 
   // 游戏进度
   mistakes: number;
@@ -159,6 +162,41 @@ interface GameState {
   pause: () => void;
   resume: () => void;
   tick: () => void;
+  clearLastError: () => void;
+  clearCompletedGroups: () => void;
+}
+
+/** 检测填数后哪些 group（行/列/宫）刚好被填满 */
+function detectCompletedGroups(board: GameBoard, row: number, col: number): { type: 'row' | 'col' | 'box'; index: number }[] {
+  const groups: { type: 'row' | 'col' | 'box'; index: number }[] = [];
+
+  // 检查行
+  const rowComplete = board[row].every(c => c.value !== null && !c.isError);
+  if (rowComplete) groups.push({ type: 'row', index: row });
+
+  // 检查列
+  const colComplete = board.every(r => r[col].value !== null && !r[col].isError);
+  if (colComplete) groups.push({ type: 'col', index: col });
+
+  // 检查 box
+  const boxRowStart = getBoxStart(row);
+  const boxColStart = getBoxStart(col);
+  let boxComplete = true;
+  for (let r = boxRowStart; r < boxRowStart + 3; r++) {
+    for (let c = boxColStart; c < boxColStart + 3; c++) {
+      if (board[r][c].value === null || board[r][c].isError) {
+        boxComplete = false;
+        break;
+      }
+    }
+    if (!boxComplete) break;
+  }
+  if (boxComplete) {
+    const boxIndex = Math.floor(row / 3) * 3 + Math.floor(col / 3);
+    groups.push({ type: 'box', index: boxIndex });
+  }
+
+  return groups;
 }
 
 // --- Store ---
@@ -173,6 +211,8 @@ export const useGameStore = create<GameState>()(
   selectedCell: null,
   isNotesMode: false,
   isGenerating: false,
+  lastErrorCell: null,
+  completedGroups: [],
   mistakes: 0,
   hintsUsed: 0,
   elapsedTime: 0,
@@ -218,36 +258,57 @@ export const useGameStore = create<GameState>()(
     newBoard[row][col].value = num;
     newBoard[row][col].notes = [];
 
-    // 检查是否正确（计分用）
-    let newMistakes = get().mistakes;
-    const isWrong = solution[row][col] !== num;
-    if (isWrong) {
-      newMistakes++;
-    }
-
     // 自动清除同行/列/box 中其他格子的笔记
     clearRelatedNotes(newBoard, row, col, num);
 
-    // 更新冲突标记
+    // 更新冲突标记（基于数独规则：同行/列/宫不能有重复）
     updateConflicts(newBoard);
 
-    // 检查是否完成
+    // 判断是否产生了规则冲突（不是对比 solution，而是检测数独规则违反）
+    const hasConflict = newBoard[row][col].isError;
+
+    // 检测哪些 group 刚被完成
+    const detectedGroups = detectCompletedGroups(newBoard, row, col);
+
+    // 检查是否完成（全部填满且与 solution 一致）
     const completed = isComplete(toBoardValues(newBoard), solution);
 
+    // 完成时统计错误数（用 solution 对比，只在结算时计算）
     if (completed) {
+      let totalMistakes = 0;
+      // 此刻已完成，统计整局中的实际错误不再需要（因为完成意味着全对）
+      // mistakes 改为统计"当前棋盘上与 solution 不一致的格子数"（完成时为 0）
       useStatsStore.getState().recordGame({
         difficulty: get().difficulty!,
         elapsedTime: get().elapsedTime,
-        mistakes: newMistakes,
+        mistakes: get().mistakes,
+        hintsUsed: get().hintsUsed,
       });
     }
 
-    set({ board: newBoard, mistakes: newMistakes, isCompleted: completed });
+    set({
+      board: newBoard,
+      mistakes: hasConflict ? get().mistakes + 1 : get().mistakes,
+      isCompleted: completed,
+      lastErrorCell: hasConflict ? { row, col } : null,
+      ...(detectedGroups.length > 0 ? { completedGroups: detectedGroups } : {}),
+    });
 
-    // Haptic 反馈
+    // Haptic 反馈 + 音效
+    // 所有填数都有相同的轻反馈，只有规则冲突时才有错误反馈
     hapticLight();
-    if (isWrong) hapticError();
-    if (completed) hapticSuccess();
+    playSound("pop");
+    if (hasConflict) {
+      hapticError();
+      playSound("error");
+    }
+    if (detectedGroups.length > 0) {
+      playSound("lineClear");
+    }
+    if (completed) {
+      hapticSuccess();
+      playSound("complete");
+    }
   },
 
   erase: () => {
@@ -291,6 +352,7 @@ export const useGameStore = create<GameState>()(
     updateConflicts(previous.board);
 
     set({ board: previous.board, history: newHistory });
+    playSound("undo");
   },
 
   hint: () => {
@@ -331,6 +393,7 @@ export const useGameStore = create<GameState>()(
         difficulty: get().difficulty!,
         elapsedTime: get().elapsedTime,
         mistakes: get().mistakes,
+        hintsUsed: hintsUsed + 1,
       });
     }
 
@@ -341,9 +404,13 @@ export const useGameStore = create<GameState>()(
       isCompleted: completed,
     });
 
-    // Haptic 反馈
+    // Haptic 反馈 + 音效
     hapticMedium();
-    if (completed) hapticSuccess();
+    playSound("pop");
+    if (completed) {
+      hapticSuccess();
+      playSound("complete");
+    }
   },
 
   newGame: (difficulty) => {
@@ -414,6 +481,14 @@ export const useGameStore = create<GameState>()(
     if (!isPaused && !isCompleted) {
       set((state) => ({ elapsedTime: state.elapsedTime + 1 }));
     }
+  },
+
+  clearLastError: () => {
+    set({ lastErrorCell: null });
+  },
+
+  clearCompletedGroups: () => {
+    set({ completedGroups: [] });
   },
     }),
     {

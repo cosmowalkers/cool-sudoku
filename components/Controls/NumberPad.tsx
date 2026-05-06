@@ -1,6 +1,33 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useGameStore } from "@/stores/game-store";
+
+function AnimatedNumberButton({ num, onPress, disabled }: { num: number; onPress: () => void; disabled: boolean }) {
+  const scale = useSharedValue(1);
+  const reducedMotion = useReducedMotion();
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Pressable
+      onPressIn={() => { if (!reducedMotion && !disabled) scale.value = withSpring(0.9); }}
+      onPressOut={() => { if (!reducedMotion) scale.value = withSpring(1); }}
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityLabel={`Number ${num}${disabled ? ", completed" : ""}`}
+    >
+      <Animated.View style={[styles.button, disabled && styles.buttonDisabled, animatedStyle]}>
+        <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>
+          {num}
+        </Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 export function NumberPad() {
   const placeNumber = useGameStore((s) => s.placeNumber);
@@ -29,26 +56,12 @@ export function NumberPad() {
       {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
         const isCompleted = completedNumbers[num] >= 9;
         return (
-          <Pressable
+          <AnimatedNumberButton
             key={num}
-            onPress={() => !isCompleted && placeNumber(num)}
+            num={num}
+            onPress={() => placeNumber(num)}
             disabled={isCompleted}
-            style={({ pressed }) => [
-              styles.button,
-              pressed && !isCompleted && styles.buttonPressed,
-              isCompleted && styles.buttonDisabled,
-            ]}
-            accessibilityLabel={`Number ${num}${isCompleted ? ", completed" : ""}`}
-          >
-            <Text
-              style={[
-                styles.buttonText,
-                isCompleted && styles.buttonTextDisabled,
-              ]}
-            >
-              {num}
-            </Text>
-          </Pressable>
+          />
         );
       })}
     </View>
@@ -58,25 +71,18 @@ export function NumberPad() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    gap: 6,
+    justifyContent: "space-evenly",
+    paddingHorizontal: 4,
   },
   button: {
-    flex: 1,
-    aspectRatio: 1,
-    maxWidth: 48,
-    minHeight: 48,
+    width: 36,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E2E8F0",
-  },
-  buttonPressed: {
-    opacity: 0.7,
-    backgroundColor: "#DBEAFE",
   },
   buttonDisabled: {
     opacity: 0.3,

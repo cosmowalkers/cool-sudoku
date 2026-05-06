@@ -1,469 +1,295 @@
 {
   "project": "Cool Sudoku",
-  "branchName": "ralph/implement-sudoku-app",
-  "description": "实现完整数独游戏 App：引擎生成/求解、棋盘交互、笔记/撤销/提示、计时、统计持久化",
+  "branchName": "ralph/experience-upgrade",
+  "description": "体验升级：微交互动效、通关庆祝、音效系统、连胜机制、成就徽章",
   "userStories": [
     {
       "id": "US-001",
-      "title": "安装依赖并配置 Tailwind color tokens",
-      "description": "As a developer, I need zustand, async-storage, lucide icons installed and design system colors configured in tailwind.",
+      "title": "安装新依赖并准备资源文件",
+      "description": "As a developer, I need lottie, expo-av, view-shot, expo-sharing installed, and placeholder asset files created.",
       "acceptanceCriteria": [
-        "zustand and @react-native-async-storage/async-storage are in package.json dependencies",
-        "lucide-react-native and react-native-svg are in package.json dependencies",
-        "tailwind.config.js extend.colors contains: primary (#2563EB), primary-light (#DBEAFE), secondary (#7C3AED), secondary-light (#EDE9FE), accent (#F59E0B), surface (#FFFFFF), foreground (#0F172A), foreground-muted (#64748B), user-input (#2563EB), error (#DC2626), error-light (#FEE2E2), border (#E2E8F0), border-thick (#334155), note (#64748B), hint (#059669), background (#F8FAFC)",
-        "tailwind.config.js extend.colors also contains dark mode variants under a 'dark' key or as separate tokens (dark-primary #60A5FA, dark-background #0F172A, dark-surface #1E293B, dark-foreground #F1F5F9, etc.)",
+        "lottie-react-native is in package.json dependencies",
+        "expo-av is in package.json dependencies",
+        "react-native-view-shot is in package.json dependencies",
+        "expo-sharing is in package.json dependencies",
+        "assets/lottie/ directory exists with a confetti.json placeholder (can be empty JSON object for now)",
+        "assets/sounds/ directory exists with 6 placeholder .mp3 files (pop.mp3, error.mp3, undo.mp3, lineClear.mp3, complete.mp3, achievement.mp3)",
         "npm install completes without errors",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": false,
-      "notes": "Read design-system/MASTER.md for full color token list. Use extend.colors in tailwind.config.js. Dark mode tokens should be prefixed or nested."
+      "notes": "Use npx expo install for Expo-compatible versions. For placeholder sounds, create minimal silent MP3 files (can be replaced with real sounds later). For confetti.json, download a free one from lottiefiles.com or use {} as placeholder."
     },
     {
       "id": "US-002",
-      "title": "清理脚手架页面并配置 Tab 结构",
-      "description": "As a developer, I need the scaffold pages replaced with Game/Stats tabs layout.",
+      "title": "扩展 i18n 字典（成就/连胜/音效/庆祝文案）",
+      "description": "As a user, I want all new UI text available in both Chinese and English.",
       "acceptanceCriteria": [
-        "app/(tabs)/explore.tsx is removed",
-        "app/(tabs)/index.tsx is a minimal placeholder with text 'Game'",
-        "app/(tabs)/stats.tsx exists as a minimal placeholder with text 'Stats'",
-        "app/(tabs)/_layout.tsx has two tabs: 'Game' (index) with grid icon and 'Stats' (stats) with chart icon, using lucide-react-native icons",
-        "app/modal.tsx is removed or renamed to app/new-game.tsx as placeholder",
-        "App launches without crash on iOS/Android/Web",
+        "lib/i18n/locales/zh.ts has new keys for: 18 achievement names, 18 achievement descriptions, streak milestone messages (3/7/14/30/100), mute toggle label, result card texts (new record, share), celebration texts",
+        "lib/i18n/locales/en.ts has corresponding English translations for all new keys",
+        "All new keys follow existing naming convention (dot-separated, lowercase)",
         "Typecheck passes"
       ],
       "priority": 2,
       "passes": false,
-      "notes": "Use lucide-react-native icons (Grid3x3 for Game, BarChart3 for Stats). Keep HapticTab for tab button. Reference existing _layout.tsx pattern."
+      "notes": "Achievement keys: 'achievement.first-win.name', 'achievement.first-win.desc', etc. Streak: 'streak.milestone.3', 'streak.milestone.7'. Settings: 'settings.mute', 'settings.unmute'. Result: 'result.newRecord', 'result.share'."
     },
     {
       "id": "US-003",
-      "title": "定义数独引擎 TypeScript 类型",
-      "description": "As a developer, I need all core types defined before implementing logic.",
+      "title": "实现 useReducedMotion hook",
+      "description": "As a user with motion sensitivity, I want animations to be disabled when system reduced-motion is enabled.",
       "acceptanceCriteria": [
-        "File lib/sudoku/types.ts exists",
-        "Exports type Difficulty = 'easy' | 'medium' | 'hard' | 'expert'",
-        "Exports type CellValue = number | null (1-9 or null for empty)",
-        "Exports type Board = CellValue[][] (9x9 grid)",
-        "Exports type CellState with fields: value (CellValue), isGiven (boolean), notes (Set<number> or number[]), isError (boolean)",
-        "Exports type GameBoard = CellState[][] (9x9 grid of CellState)",
-        "Exports type Coordinate = { row: number; col: number }",
-        "Exports DIFFICULTY_CONFIG record mapping difficulty to { minGivens: number; maxGivens: number }",
+        "File hooks/use-reduced-motion.ts exists",
+        "Exports useReducedMotion() hook that returns boolean",
+        "On iOS/Android: reads AccessibilityInfo.isReduceMotionEnabled (or Reanimated's useReducedMotion)",
+        "Returns true when system prefers reduced motion, false otherwise",
         "Typecheck passes"
       ],
       "priority": 3,
       "passes": false,
-      "notes": "Keep notes as number[] (not Set) for JSON serialization with Zustand persist. DIFFICULTY_CONFIG: easy 36-45, medium 27-35, hard 22-26, expert 17-21."
+      "notes": "react-native-reanimated exports useReducedMotion() since v3. Use that directly if available, otherwise use AccessibilityInfo from react-native."
     },
     {
       "id": "US-004",
-      "title": "实现数独求解器 (solve)",
-      "description": "As a developer, I need a backtracking solver to validate unique solutions and power hints.",
+      "title": "实现 Cell 填数弹跳动画",
+      "description": "As a user, I want to see a satisfying bounce when a number appears in a cell.",
       "acceptanceCriteria": [
-        "File lib/sudoku/solver.ts exists",
-        "Exports function solve(board: Board): Board | null",
-        "Returns complete solution for valid puzzles",
-        "Returns null for unsolvable/invalid puzzles",
-        "Exports function hasUniqueSolution(board: Board): boolean that confirms exactly one solution exists",
-        "Exports function validatePlacement(board: Board, row: number, col: number, num: number): boolean that checks row/col/box conflicts",
+        "When a number is placed in a cell, it appears with scale animation from 0.6 to 1.0 using withSpring",
+        "Opacity also animates from 0 to 1",
+        "Animation duration approximately 150ms",
+        "When reduced-motion is enabled, number appears instantly without animation",
+        "Hint numbers also get the same animation",
+        "Existing cell rendering (given/user/error/note distinction) is preserved",
         "Typecheck passes"
       ],
       "priority": 4,
       "passes": false,
-      "notes": "Backtracking algorithm. For hasUniqueSolution, use a counter that stops at 2 solutions found. Import types from ./types."
+      "notes": "Modify components/Board/Cell.tsx. Use useAnimatedStyle from reanimated. The animation triggers when cell.value changes from null to a number. Use useEffect watching cell.value to trigger the animation. Keep React.memo."
     },
     {
       "id": "US-005",
-      "title": "实现数独谜题生成器 (generateSolution + createPuzzle)",
-      "description": "As a developer, I need puzzle generation with difficulty levels.",
+      "title": "实现错误抖动动画",
+      "description": "As a user, I want immediate visual feedback that I placed a wrong number.",
       "acceptanceCriteria": [
-        "File lib/sudoku/generator.ts exists",
-        "Exports function generateSolution(): Board that returns a complete valid 9x9 grid",
-        "Exports function createPuzzle(difficulty: Difficulty): { puzzle: Board; solution: Board }",
-        "Generated puzzle has givens count within DIFFICULTY_CONFIG range for the difficulty",
-        "Generated puzzle has exactly one solution (verified via hasUniqueSolution)",
-        "Exports lib/sudoku/index.ts barrel file re-exporting all public API",
+        "When a number conflicts with the solution, the cell shakes horizontally",
+        "Shake pattern: ±4px, 3 cycles, total 200ms",
+        "Uses withSequence + withTiming from reanimated",
+        "Shake happens in addition to the existing red error styling",
+        "When reduced-motion is enabled, shake is skipped (error styling still shows)",
         "Typecheck passes"
       ],
       "priority": 5,
       "passes": false,
-      "notes": "generateSolution: fill diagonal 3x3 boxes first (no conflict possible), then solve the rest. createPuzzle: start from solution, remove cells randomly, verify unique solution after each removal. If removal breaks uniqueness, skip that cell."
+      "notes": "Add translateX animated style to Cell. Need a trigger mechanism - could use a 'lastErrorTimestamp' or 'shakeCell' coordinate in the store that Cell watches."
     },
     {
       "id": "US-006",
-      "title": "实现 isComplete 和引擎单元测试",
-      "description": "As a developer, I need completion check and tests to verify engine correctness.",
+      "title": "实现行/列/宫完成闪光",
+      "description": "As a user, I want visual reward when I complete a row, column, or box.",
       "acceptanceCriteria": [
-        "lib/sudoku/solver.ts exports function isComplete(board: Board, solution: Board): boolean",
-        "Returns true only when all 81 cells match solution",
-        "Returns false if any cell is null or mismatched",
-        "Test file exists (lib/sudoku/__tests__/engine.test.ts or similar)",
-        "Tests cover: generateSolution produces valid grid, createPuzzle returns puzzle with unique solution, validatePlacement detects row/col/box conflicts, solve returns correct solution, isComplete works correctly",
-        "Tests pass",
+        "When a row is fully filled with unique values 1-9, all 9 cells in that row flash",
+        "Flash effect: overlay opacity pulses 0 → 0.3 → 0 over 300ms",
+        "Same behavior for columns and 3x3 boxes",
+        "If placing one number completes multiple groups, all flash simultaneously",
+        "Detection logic correctly identifies completed groups after each placement",
+        "When reduced-motion is enabled, flash is skipped",
         "Typecheck passes"
       ],
       "priority": 6,
       "passes": false,
-      "notes": "Install jest or vitest if not present. Minimal test setup. A valid grid means each row, column, and 3x3 box contains 1-9 exactly once."
+      "notes": "Add detection logic to placeNumber action (or as a derived computation). Store a 'completedGroups' array in state that Board/Cell reads. After 300ms, clear it. Consider: a 'flashCells' Set<string> of 'row:col' coordinates."
     },
     {
       "id": "US-007",
-      "title": "创建 useGameStore - Zustand store 基础结构",
-      "description": "As a developer, I need the game state store with all state fields and basic actions.",
+      "title": "实现 NumberPad 按压动画和选中格脉冲",
+      "description": "As a user, I want tactile feel when pressing number buttons and clear indication of selected cell.",
       "acceptanceCriteria": [
-        "File stores/game-store.ts exists",
-        "Store state includes: board (GameBoard), solution (Board), selectedCell (Coordinate | null), isNotesMode (boolean), history (array for undo), difficulty (Difficulty | null), mistakes (number), hintsUsed (number), elapsedTime (number), isPaused (boolean), isCompleted (boolean)",
-        "Store actions include: selectCell, placeNumber, erase, toggleNotesMode, undo, hint, newGame, pause, resume, tick (timer increment)",
-        "placeNumber action: places number in selected cell if not given, pushes to history, checks for error against solution, increments mistakes if wrong",
-        "erase action: clears user-entered cell value, pushes to history",
-        "undo action: pops last state from history and restores it",
+        "Number pad buttons scale to 0.9 on press with spring animation",
+        "Buttons spring back to 1.0 on release",
+        "Selected cell border opacity pulses between 0.6 and 1.0 with 1.5s period",
+        "Pulse stops when cell is deselected",
+        "Pulse is disabled when reduced-motion is enabled",
         "Typecheck passes"
       ],
       "priority": 7,
       "passes": false,
-      "notes": "Use zustand create(). Do NOT add persist middleware yet (that's next story). Store selectedCell and isNotesMode in state but they won't be persisted. Use immer middleware for immutable updates if desired."
+      "notes": "For NumberPad: use useAnimatedStyle + Pressable onPressIn/onPressOut or Gesture.Tap. For pulse: withRepeat(withTiming(...)) on the selected cell's border opacity in Cell.tsx."
     },
     {
       "id": "US-008",
-      "title": "实现 useGameStore 高级 actions (hint, notes, newGame, auto-clear notes)",
-      "description": "As a developer, I need hint (limited to 3), notes toggle, auto-clear notes on placement, and newGame.",
+      "title": "实现音效系统核心 (lib/audio)",
+      "description": "As a developer, I need the audio engine to preload and play sounds.",
       "acceptanceCriteria": [
-        "hint action: reveals correct number from solution in selected cell, marks as hint, increments hintsUsed, no-op if hintsUsed >= 3 or cell not empty/already correct",
-        "toggleNote action: in notes mode, toggles number in selected cell's notes array, pushes to history",
-        "placeNumber also auto-clears: when number placed, removes that number from notes in all cells of same row/col/box",
-        "newGame action: accepts difficulty, calls createPuzzle, resets all game state (board, solution, history, mistakes, hintsUsed, elapsedTime, isPaused, isCompleted)",
-        "Game completion detection: after placeNumber, checks isComplete and sets isCompleted=true if done",
+        "File lib/audio/index.ts exists",
+        "Exports preloadSounds(): Promise<void> that loads all 6 MP3 files",
+        "Exports playSound(id: 'pop'|'error'|'undo'|'lineClear'|'complete'|'achievement'): void",
+        "playSound checks isMuted from settings before playing",
+        "Exports unloadSounds(): void for cleanup",
+        "Uses expo-av Audio.Sound API",
+        "Sound volume set to 0.3-0.5",
         "Typecheck passes"
       ],
       "priority": 8,
       "passes": false,
-      "notes": "Import createPuzzle and isComplete from lib/sudoku. Hint cells should have a special flag (isHint: true in CellState or similar) for styling."
+      "notes": "Store isMuted in useLocaleStore (rename to useSettingsStore? or just add isMuted field to localeStore for simplicity). preloadSounds should be called in _layout.tsx after hydration."
     },
     {
       "id": "US-009",
-      "title": "配置 Zustand persist middleware + hydration loading",
-      "description": "As a developer, I need game state persisted to AsyncStorage with throttle and proper hydration.",
+      "title": "集成音效到游戏 actions + 静音开关 UI",
+      "description": "As a user, I want to hear sounds on key actions and toggle them off.",
       "acceptanceCriteria": [
-        "useGameStore uses zustand persist middleware with AsyncStorage",
-        "partialize only persists: board, solution, difficulty, mistakes, hintsUsed, elapsedTime, isCompleted, history (NOT selectedCell, isNotesMode, isPaused)",
-        "Persist uses a throttle/debounce of ~1000ms to avoid excessive writes",
-        "Store exports a useGameStoreHydrated() hook or hasHydrated selector that returns true after rehydration",
-        "App _layout.tsx keeps expo-splash-screen visible until hydration completes (SplashScreen.preventAutoHideAsync + hideAsync after hydrated)",
-        "App launches and restores previous game state after kill+relaunch",
+        "Placing a number plays 'pop' sound",
+        "Wrong number additionally plays 'error' sound",
+        "Undo plays 'undo' sound",
+        "Line/box complete plays 'lineClear' sound",
+        "Puzzle complete plays 'complete' sound",
+        "A mute toggle button exists on the stats page (near language switch)",
+        "Mute state persists across app restarts",
+        "When muted, no sounds play",
+        "preloadSounds is called on app startup after hydration",
         "Typecheck passes"
       ],
       "priority": 9,
       "passes": false,
-      "notes": "Use zustand/middleware persist with createJSONStorage(() => AsyncStorage). For throttle, wrap storage.setItem. For hydration detection, use onRehydrateStorage callback or the persist API's hasHydrated."
+      "notes": "Add playSound calls in game-store.ts actions. Add isMuted to locale store or create settings store. Add toggle button in stats.tsx."
     },
     {
       "id": "US-010",
-      "title": "实现计时器逻辑 + AppState 前后台监听",
-      "description": "As a developer, I need the game timer to tick every second and pause on background.",
+      "title": "实现通关庆祝流程 (Confetti + ResultCard)",
+      "description": "As a user, I want a celebration experience when I complete a puzzle.",
       "acceptanceCriteria": [
-        "A custom hook or component (hooks/useGameTimer.ts) manages setInterval for ticking",
-        "Timer increments elapsedTime in store every 1 second when game is active (not paused, not completed)",
-        "Timer pauses when app goes to background (AppState 'inactive'/'background')",
-        "Timer resumes when app returns to foreground (AppState 'active')",
-        "Timer does NOT persist the interval ID - on rehydration, calculates time compensation if needed using stored lastActiveTimestamp",
-        "Store adds lastActiveTimestamp field (updated on each tick or on background event), persisted",
+        "Completing a puzzle triggers full-screen Lottie confetti animation",
+        "Confetti plays for 2-3 seconds then disappears",
+        "After confetti, a ResultCard slides in from bottom (300ms ease-out)",
+        "ResultCard shows: difficulty, elapsed time, mistakes count, hints used",
+        "If time beats previous best for that difficulty, shows 'New Record!' highlight",
+        "ResultCard has 'Share' and 'New Game' buttons",
+        "When reduced-motion enabled, confetti is skipped, ResultCard appears immediately",
         "Typecheck passes"
       ],
       "priority": 10,
       "passes": false,
-      "notes": "Use React Native AppState API. On foreground resume: if lastActiveTimestamp exists and game was active, do NOT add background time (timer was paused). This is correct behavior - we only count active play time."
+      "notes": "Create components/Celebration/Confetti.tsx and ResultCard.tsx. Replace existing isCompleted overlay in index.tsx with the new celebration sequence. Need to compute bestTime from stats-store."
     },
     {
       "id": "US-011",
-      "title": "实现 Board 组件 - 9×9 Grid 布局",
-      "description": "As a user, I want to see the sudoku grid with clear 3×3 box separators.",
+      "title": "实现截图分享功能",
+      "description": "As a user, I want to share my game result as an image.",
       "acceptanceCriteria": [
-        "File components/Board/Board.tsx exists",
-        "Renders 9 rows of 9 cells using nested View (no FlatList)",
-        "3×3 box boundaries have thick border (2px, border-thick color)",
-        "Individual cell boundaries have thin border (0.5px hairline, border color)",
-        "Board width is responsive: (screenWidth - 2 * horizontalPadding) with cells = boardWidth / 9",
-        "Board has white/surface background",
-        "Uses NativeWind classes where possible",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Tapping 'Share' on ResultCard captures the card as a PNG image",
+        "System share sheet opens with the captured image",
+        "Shared image contains: app name, difficulty, time, mistakes",
+        "Uses react-native-view-shot for capture",
+        "Uses expo-sharing for system share sheet",
+        "Typecheck passes"
       ],
       "priority": 11,
       "passes": false,
-      "notes": "Use useWindowDimensions for screen width. Horizontal padding 16px each side. Cell size = (width - 32) / 9. Use StyleSheet for borders that need precise px control (NativeWind doesn't support 0.5px). Wrap in React.memo."
+      "notes": "Wrap ResultCard in a ViewShot ref. On share press: captureRef → sharing.shareAsync(uri). Add 'Cool Sudoku' watermark text at bottom of card."
     },
     {
       "id": "US-012",
-      "title": "实现 Cell 组件 - 数字/笔记显示 + 样式区分",
-      "description": "As a user, I want cells to show numbers (given/user/hint) and pencil-mark notes.",
+      "title": "实现连胜系统数据层",
+      "description": "As a developer, I need streak tracking logic in the stats store.",
       "acceptanceCriteria": [
-        "File components/Board/Cell.tsx exists",
-        "Given numbers render bold (font-weight 700) in foreground color",
-        "User-entered numbers render medium weight (500) in user-input/primary color",
-        "Hint numbers render in hint/green color",
-        "Error numbers render in error/red color",
-        "Notes render as small 3×3 grid of numbers (10px) in note/muted color within the cell",
-        "Empty cells render blank",
-        "Cell uses React.memo with custom comparator to prevent unnecessary re-renders",
-        "Uses Zustand selector to subscribe only to its own cell state",
+        "stats-store has new persisted fields: currentStreak (number), bestStreak (number), lastCompletedDate (string|null)",
+        "recordGame correctly updates streak: same day=no change, yesterday=increment, older=reset to 1",
+        "bestStreak is updated when currentStreak exceeds it",
+        "lastCompletedDate is set to today's date string (YYYY-MM-DD) on each completion",
+        "Existing getOverallStats uses the stored streak fields instead of computing from history",
         "Typecheck passes"
       ],
       "priority": 12,
       "passes": false,
-      "notes": "Each Cell subscribes to useGameStore(state => state.board[row][col]) for its own data. Use tabular-nums font variant for number alignment. Notes grid: 3 rows of 3, each position maps to number 1-9."
+      "notes": "Replace the current complex day-set computation in getOverallStats with direct field reads. Keep the history-based bestStreak computation as a migration fallback for existing users (or just reset it)."
     },
     {
       "id": "US-013",
-      "title": "实现选中高亮逻辑",
-      "description": "As a user, I want to see which cell is selected and its related row/col/box highlighted.",
+      "title": "实现连胜 UI 展示 + 里程碑庆祝",
+      "description": "As a user, I want to see my streak and get celebrated at milestones.",
       "acceptanceCriteria": [
-        "Tapping a cell sets it as selected (distinct background color: primary)",
-        "All cells in same row as selected get primary-light background",
-        "All cells in same column as selected get primary-light background",
-        "All cells in same 3×3 box as selected get primary-light background",
-        "All cells containing the same number as selected cell get secondary-light background",
-        "Highlight priority: selected > same-number > same-row/col/box > normal",
-        "Pressing a cell triggers Pressable onPress, not relying on hover",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Game screen header shows flame icon + streak number between difficulty label and timer",
+        "Flame is orange (#F59E0B) when today is completed, gray (#94A3B8) when not yet",
+        "No flame shown when streak is 0",
+        "When streak reaches 3/7/14/30/100, a milestone overlay appears after game completion",
+        "Milestone overlay uses Lottie animation + congratulatory text",
+        "Stats page streak card shows flame icon",
+        "Typecheck passes"
       ],
       "priority": 13,
       "passes": false,
-      "notes": "Cell component reads selectedCell from store and computes its own highlight state. Use a helper function to determine which highlight category a cell falls into given selectedCell coordinate."
+      "notes": "Create components/Streak/StreakBadge.tsx. Integrate into game screen header. Milestone detection: compare currentStreak after update with milestone thresholds. Show milestone overlay AFTER ResultCard is dismissed."
     },
     {
       "id": "US-014",
-      "title": "实现冲突标记（错误高亮）",
-      "description": "As a user, I want conflicting numbers to be visually marked in red.",
+      "title": "创建 achievement-store 并定义 18 个成就",
+      "description": "As a developer, I need the achievement system foundation with all 18 definitions.",
       "acceptanceCriteria": [
-        "When a user places a number that conflicts with another cell in same row/col/box, both cells show error styling",
-        "Error styling: red text color (error token) + light red background (error-light token)",
-        "Conflicts are computed from the current board state (not just against solution)",
-        "When the conflicting value is removed/changed, error styling is removed",
-        "Given cells that conflict with user input also show error indicator",
+        "File stores/achievement-store.ts exists",
+        "Exports useAchievementStore with Zustand + persist",
+        "State includes: unlockedIds (string[]), unlockedDates (Record<string,string>), newlyUnlocked (string[])",
+        "18 achievements defined with id, icon (emoji), i18n nameKey, i18n descKey, condition function",
+        "condition functions correctly evaluate against a stats snapshot type",
+        "Exports checkAchievements() action that evaluates all locked achievements",
+        "Exports clearNewlyUnlocked() action",
         "Typecheck passes"
       ],
       "priority": 14,
       "passes": false,
-      "notes": "Compute conflicts in the store or as a derived selector. A cell has a conflict if another cell in its row/col/box has the same non-null value. Store this as a computed property, not stored state."
+      "notes": "Stats snapshot should include: totalPlayed, streakData, per-difficulty counts, last game result (time, mistakes, hintsUsed, difficulty). condition is (snapshot) => boolean."
     },
     {
       "id": "US-015",
-      "title": "实现 NumberPad 组件",
-      "description": "As a user, I want a number pad (1-9) to input values into the selected cell.",
+      "title": "集成成就检测 + 解锁弹窗",
+      "description": "As a user, I want to see a celebration when I unlock an achievement.",
       "acceptanceCriteria": [
-        "File components/Controls/NumberPad.tsx exists",
-        "Displays 9 number buttons in a single row",
-        "Each button minimum 44×44dp touch target with 8dp gap between",
-        "Tapping a number calls placeNumber (or toggleNote if notes mode active) in game store",
-        "When all 9 instances of a number are correctly placed, that button shows disabled (opacity 0.3, not pressable)",
-        "Numbers use tabular-nums font, size 20px, centered",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "checkAchievements() is called after every recordGame()",
+        "When achievement(s) unlock, newlyUnlocked is populated",
+        "After the completion celebration flow (confetti → result card → streak milestone), achievement unlock cards appear",
+        "Each card shows: Lottie sparkle background, large emoji, achievement name, description",
+        "Multiple unlocks show sequentially with 500ms delay",
+        "Cards auto-dismiss after 2s or on tap",
+        "'achievement' sound plays on each unlock",
+        "Typecheck passes"
       ],
       "priority": 15,
       "passes": false,
-      "notes": "Use Pressable (not TouchableOpacity). Compute which numbers are completed: count occurrences of each number that match solution. A number is 'done' when count === 9."
+      "notes": "Create components/Achievement/UnlockCard.tsx. In game screen, after ResultCard dismissed, check newlyUnlocked and show cards. Then clearNewlyUnlocked()."
     },
     {
       "id": "US-016",
-      "title": "实现操作栏 (Undo/Erase/Notes/Hint)",
-      "description": "As a user, I want action buttons for undo, erase, notes toggle, and hint.",
+      "title": "实现成就展示页",
+      "description": "As a user, I want to browse all achievements and see my progress.",
       "acceptanceCriteria": [
-        "File components/Controls/ActionBar.tsx exists",
-        "4 buttons in a row: Undo, Erase, Notes, Hint",
-        "Each button has icon (lucide) + label text below",
-        "Each button minimum 44×44dp touch target",
-        "Undo button disabled (opacity 0.3) when history is empty",
-        "Hint button shows remaining count (e.g., '3' badge), disabled at 0",
-        "Notes button has active indicator when isNotesMode is true (background color change)",
-        "All buttons have accessibilityLabel",
-        "Tapping each button calls corresponding store action",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Achievements section exists in the stats tab (below history list or as a separate scrollable section)",
+        "Shows progress: 'X/18 unlocked' with a progress bar",
+        "Grid layout displays all 18 achievements",
+        "Unlocked: colored emoji + name below",
+        "Locked: gray circle + '???' text",
+        "Tapping unlocked achievement shows detail (name, description, unlock date)",
+        "Dark mode adapted",
+        "Typecheck passes"
       ],
       "priority": 16,
       "passes": false,
-      "notes": "Icons: Undo2 for undo, Eraser for erase, PencilLine for notes, Lightbulb for hint. Use lucide-react-native. Hint badge shows (3 - hintsUsed)."
+      "notes": "Can be a section at the bottom of stats.tsx, or a separate scrollable area. Use a simple FlatList/grid for the 18 items. Detail can be an Alert or bottom sheet."
     },
     {
       "id": "US-017",
-      "title": "组装游戏主屏 (index.tsx)",
-      "description": "As a user, I want the game screen with header info, board, and controls assembled.",
+      "title": "收尾：reduced-motion 全面检查 + 深色模式 + 测试",
+      "description": "As a developer, I need to verify all new features work correctly across modes.",
       "acceptanceCriteria": [
-        "app/(tabs)/index.tsx renders: top info bar + Board + ActionBar + NumberPad",
-        "Top info bar shows: difficulty label, timer (MM:SS format), mistakes count, hints remaining (X/3)",
-        "Timer displays formatted elapsedTime from store",
-        "Layout fits on screen without scrolling (board + controls visible together)",
-        "Bottom area has safe area padding (for home indicator)",
-        "When no game exists (first launch or after hydration with no saved game), shows a 'New Game' button or redirects to new-game modal",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "All animations check useReducedMotion and skip appropriately",
+        "New components (Confetti, ResultCard, StreakBadge, UnlockCard, AchievementGrid) adapt to dark mode",
+        "npx tsc --noEmit passes with zero errors",
+        "npm test passes (existing engine tests not broken)",
+        "No new TypeScript warnings",
+        "Typecheck passes"
       ],
       "priority": 17,
       "passes": false,
-      "notes": "Use useSafeAreaInsets for bottom padding. Timer format: Math.floor(elapsed/60).toString().padStart(2,'0') + ':' + (elapsed%60).toString().padStart(2,'0'). Include useGameTimer hook here."
-    },
-    {
-      "id": "US-018",
-      "title": "实现暂停覆盖层",
-      "description": "As a user, I want to pause the game and hide the board.",
-      "acceptanceCriteria": [
-        "A pause button exists in the top info bar (Pause icon from lucide)",
-        "Tapping pause: sets isPaused=true in store, timer stops",
-        "When isPaused, an opaque overlay covers the board and controls",
-        "Overlay shows a 'Resume' button (Play icon)",
-        "Tapping resume: sets isPaused=false, timer resumes",
-        "Overlay prevents seeing the board (user cannot peek)",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 18,
-      "passes": false,
-      "notes": "Use absolute positioning for overlay. Background color should be surface/background (not transparent). Show elapsed time and difficulty on the pause screen so user knows context."
-    },
-    {
-      "id": "US-019",
-      "title": "实现完成弹窗",
-      "description": "As a user, I want to see a congratulations screen when I complete a puzzle.",
-      "acceptanceCriteria": [
-        "When isCompleted becomes true in store, a completion modal/overlay appears",
-        "Shows: 'Congratulations!' title, elapsed time formatted, difficulty level, mistakes count",
-        "Has 'New Game' button that navigates to new-game difficulty selection",
-        "Completion overlay covers the board",
-        "Timer is stopped on completion",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 19,
-      "passes": false,
-      "notes": "Can be a simple overlay component within index.tsx, or a modal. Trigger expo-haptics success notification on completion."
-    },
-    {
-      "id": "US-020",
-      "title": "创建 new-game modal 页面 - 难度选择",
-      "description": "As a user, I want to choose difficulty when starting a new game.",
-      "acceptanceCriteria": [
-        "File app/new-game.tsx exists with presentation: 'modal' in _layout.tsx",
-        "Shows 4 difficulty cards: Easy, Medium, Hard, Expert",
-        "Each card shows difficulty name and description (e.g., Easy: '36-45 givens, relaxed pace')",
-        "Tapping a card calls newGame(difficulty) in store then navigates back to game screen (router.back())",
-        "If game is in progress when opening, shows confirmation before starting new game",
-        "Modal can be dismissed (swipe down or X button) to cancel",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 20,
-      "passes": false,
-      "notes": "Register in _layout.tsx as Stack.Screen with presentation:'modal'. Confirmation dialog: use Alert.alert on native. Cards should have clear visual hierarchy."
-    },
-    {
-      "id": "US-021",
-      "title": "创建 useStatsStore + 记录完成游戏",
-      "description": "As a developer, I need a stats store to record and aggregate game results.",
-      "acceptanceCriteria": [
-        "File stores/stats-store.ts exists",
-        "Uses Zustand with persist middleware + AsyncStorage",
-        "State: history (array of GameResult), max 100 entries",
-        "GameResult type: { difficulty, elapsedTime, mistakes, completedAt (ISO string) }",
-        "Action: recordGame(result) pushes to history, trims to 100",
-        "Selectors: getStatsByDifficulty(difficulty) returns { gamesPlayed, bestTime, averageTime, winRate }",
-        "Selectors: getOverallStats() returns { totalPlayed, totalWon, currentStreak, bestStreak }",
-        "In useGameStore: when isCompleted is set to true, also call recordGame on stats store",
-        "Typecheck passes"
-      ],
-      "priority": 21,
-      "passes": false,
-      "notes": "currentStreak: consecutive completed games (any difficulty). bestStreak: all-time max consecutive. winRate: completed games / total games started (track totalStarted as well, or just count history length as completed)."
-    },
-    {
-      "id": "US-022",
-      "title": "实现统计页面 - 总体统计卡片",
-      "description": "As a user, I want to see my overall game statistics.",
-      "acceptanceCriteria": [
-        "app/(tabs)/stats.tsx renders statistics UI",
-        "Top section shows overall stats cards: Total Games, Win Rate (%), Current Streak, Best Streak",
-        "Each card has label + value, rounded corners (12px), surface background",
-        "Cards use 2-column grid layout",
-        "Values come from useStatsStore getOverallStats()",
-        "Empty state: if no games played, show friendly message 'No games yet. Start playing!'",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 22,
-      "passes": false,
-      "notes": "Cards follow design system: rounded-xl, bg-surface, p-4, flat style. Use NativeWind classes."
-    },
-    {
-      "id": "US-023",
-      "title": "实现统计页面 - 分难度统计 + 历史记录",
-      "description": "As a user, I want to see per-difficulty stats and recent game history.",
-      "acceptanceCriteria": [
-        "Below overall stats: difficulty filter tabs (Easy/Medium/Hard/Expert/All)",
-        "Selecting a difficulty shows: games played, best time (formatted MM:SS), average time",
-        "Below stats: scrollable list of recent games using FlashList",
-        "Each history item shows: date, difficulty badge, time, mistakes count",
-        "List limited to 100 items, most recent first",
-        "Empty state per difficulty: 'No games at this difficulty yet'",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 23,
-      "passes": false,
-      "notes": "Use @shopify/flash-list for the history list. Difficulty badges: colored background matching difficulty. Date format: relative ('Today', 'Yesterday', or 'MM/DD')."
-    },
-    {
-      "id": "US-024",
-      "title": "添加触觉反馈",
-      "description": "As a user, I want haptic feedback on key interactions.",
-      "acceptanceCriteria": [
-        "Number placement triggers Haptics.impactAsync(ImpactFeedbackStyle.Light)",
-        "Error placement (wrong number) triggers Haptics.notificationAsync(NotificationFeedbackType.Error)",
-        "Game completion triggers Haptics.notificationAsync(NotificationFeedbackType.Success)",
-        "Hint usage triggers Haptics.impactAsync(ImpactFeedbackStyle.Medium)",
-        "Haptics only fire on native (iOS/Android), not web",
-        "Typecheck passes"
-      ],
-      "priority": 24,
-      "passes": false,
-      "notes": "expo-haptics is already in the project (used by HapticTab). Import from 'expo-haptics'. Use Platform.OS check or try-catch for web."
-    },
-    {
-      "id": "US-025",
-      "title": "适配深色模式",
-      "description": "As a user, I want the app to respect system dark mode setting.",
-      "acceptanceCriteria": [
-        "Board background uses surface color that switches in dark mode (white → dark-surface)",
-        "Board borders use border/border-thick tokens that adapt to dark mode",
-        "Cell text colors adapt (foreground, user-input, error, hint, note all have dark variants)",
-        "Page backgrounds use background token (light gray → dark navy)",
-        "Number pad and action bar adapt to dark mode",
-        "Stats page cards adapt to dark mode",
-        "NativeWind dark: classes used throughout OR colorScheme-based token switching",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 25,
-      "passes": false,
-      "notes": "NativeWind supports dark: prefix (e.g., 'bg-surface dark:bg-dark-surface'). Alternatively, use useColorScheme hook and conditional token objects. Reference design-system/MASTER.md dark mode section."
-    },
-    {
-      "id": "US-026",
-      "title": "边界情况处理 + 谜题生成性能",
-      "description": "As a user, I want the app to handle edge cases gracefully and not freeze on puzzle generation.",
-      "acceptanceCriteria": [
-        "No crash when tapping number pad with no cell selected",
-        "Undo button disabled when history empty (visual + functional)",
-        "Hint button disabled when hintsUsed >= 3 (shows 0/3)",
-        "Erase on given cell is no-op (no crash, no state change)",
-        "Cannot place number in given cell",
-        "newGame uses InteractionManager.runAfterInteractions or setTimeout(0) to defer generation off the UI thread",
-        "A brief loading indicator shows while puzzle generates (if > 100ms)",
-        "Typecheck passes"
-      ],
-      "priority": 26,
-      "passes": false,
-      "notes": "Use InteractionManager from react-native. Show a simple ActivityIndicator or keep the new-game modal open with loading state until puzzle is ready."
+      "notes": "Go through each new component and verify dark mode colors. Check all withSpring/withTiming are gated behind !reducedMotion. Run full test suite."
     }
   ]
 }

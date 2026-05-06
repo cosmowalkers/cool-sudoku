@@ -10,6 +10,7 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useGameStore } from "@/stores/game-store";
+import { preloadSounds } from "@/lib/audio";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../global.css";
 
@@ -39,6 +40,12 @@ export default function RootLayout() {
     const timeout = setTimeout(() => setReady(true), 2000);
     return () => clearTimeout(timeout);
   }, []);
+
+  useEffect(() => {
+    if (ready) {
+      preloadSounds();
+    }
+  }, [ready]);
 
   if (!ready) {
     return null;

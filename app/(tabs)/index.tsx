@@ -1,13 +1,18 @@
-import React from "react";
-import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Pressable, StyleSheet, Alert, Share } from "react-native";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Pause, Play, RotateCcw } from "lucide-react-native";
 import { Board } from "@/components/Board";
 import { NumberPad, ActionBar } from "@/components/Controls";
+import { Confetti, ResultCard } from "@/components/Celebration";
+import { StreakBadge } from "@/components/Streak";
+import { UnlockOverlay } from "@/components/Achievement";
 import { useGameStore } from "@/stores/game-store";
+import { useStatsStore } from "@/stores/stats-store";
 import { useGameTimer } from "@/hooks/use-game-timer";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useTranslation } from "@/lib/i18n";
 
 function formatTime(seconds: number): string {
@@ -18,9 +23,10 @@ function formatTime(seconds: number): string {
 
 export default function GameScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const colorScheme = useColorScheme();
   const { t } = useTranslation();
+  const reducedMotion = useReducedMotion();
   useGameTimer();
 
   const isDark = colorScheme === "dark";
@@ -43,6 +49,44 @@ export default function GameScreen() {
   const resume = useGameStore((s) => s.resume);
   const restart = useGameStore((s) => s.restart);
 
+  const lastMilestone = useStatsStore((s) => s.lastMilestone);
+  const clearMilestone = useStatsStore((s) => s.clearMilestone);
+
+  // 庆祝流程
+  const [celebrationPhase, setCelebrationPhase] = useState<"none" | "confetti" | "result">("none");
+
+  useEffect(() => {
+    if (isCompleted) {
+      if (reducedMotion) {
+        setCelebrationPhase("result");
+      } else {
+        setCelebrationPhase("confetti");
+      }
+    } else {
+      setCelebrationPhase("none");
+    }
+  }, [isCompleted, reducedMotion]);
+
+  useEffect(() => {
+    if (celebrationPhase === "result" && lastMilestone) {
+      const timer = setTimeout(() => {
+        Alert.alert(
+          `🔥 ${t("streak.days", { count: lastMilestone })}`,
+          t(`streak.milestone.${lastMilestone}`),
+          [{ text: "OK", onPress: clearMilestone }]
+        );
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [celebrationPhase, lastMilestone, t, clearMilestone]);
+
+  const handleShare = async () => {
+    const text = `Cool Sudoku\n${difficulty ? t("diff." + difficulty) : ""} | ${formatTime(elapsedTime)} | ${mistakes} ${t("result.mistakes")}`;
+    try {
+      await Share.share({ message: text });
+    } catch (_e) {}
+  };
+
   // 没有进行中的游戏
   if (!difficulty) {
     return (
@@ -60,13 +104,14 @@ export default function GameScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom + 8, backgroundColor: colors.bg }]}>
+    <View style={[styles.container, { paddingBottom: tabBarHeight + 8, backgroundColor: colors.bg }]}>
       {/* 顶部信息栏 */}
       <View style={styles.infoBar}>
         <View style={styles.infoLeft}>
           <Text style={[styles.difficultyLabel, { color: colors.textMuted }]}>
             {t("diff." + difficulty)}
           </Text>
+          <StreakBadge />
           <Pressable
             onPress={() => {
               Alert.alert(
@@ -127,21 +172,15 @@ export default function GameScreen() {
         </View>
       )}
 
-      {/* 完成弹窗 */}
-      {isCompleted && (
-        <View style={[styles.overlay, { backgroundColor: colors.bg }]}>
-          <Text style={styles.completeTitle}>{t("game.congrats")}</Text>
-          <Text style={[styles.completeSubtitle, { color: colors.textMuted }]}>
-            {t("diff." + difficulty)} • {formatTime(elapsedTime)} • {t("game.errorsResult", { count: mistakes })}
-          </Text>
-          <Pressable
-            style={[styles.newGameButton, { backgroundColor: colors.primary }]}
-            onPress={() => router.push("/new-game")}
-          >
-            <Text style={styles.newGameButtonText}>{t("game.newGame")}</Text>
-          </Pressable>
-        </View>
+      {/* 庆祝流程 */}
+      {celebrationPhase === "confetti" && (
+        <Confetti onFinish={() => setCelebrationPhase("result")} />
       )}
+      {celebrationPhase === "result" && (
+        <ResultCard onShare={handleShare} />
+      )}
+
+      <UnlockOverlay />
     </View>
   );
 }
@@ -252,17 +291,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#64748B",
     marginBottom: 24,
-  },
-  completeTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#059669",
-    marginBottom: 8,
-  },
-  completeSubtitle: {
-    fontSize: 16,
-    color: "#64748B",
-    marginBottom: 32,
   },
   newGameButton: {
     backgroundColor: "#2563EB",

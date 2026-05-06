@@ -11,14 +11,20 @@ const dictionaries: Record<Locale, Record<string, string>> = { zh, en };
 
 interface LocaleState {
   locale: Locale;
+  isMuted: boolean;
   setLocale: (locale: Locale) => void;
+  setMuted: (muted: boolean) => void;
+  toggleMute: () => void;
 }
 
 export const useLocaleStore = create<LocaleState>()(
   persist(
     (set) => ({
       locale: "zh",
+      isMuted: false,
       setLocale: (locale) => set({ locale }),
+      setMuted: (muted) => set({ isMuted: muted }),
+      toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
     }),
     {
       name: "locale-store",
