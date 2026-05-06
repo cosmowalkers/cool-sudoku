@@ -4,7 +4,7 @@ export const zh: Record<string, string> = {
   "tab.stats": "统计",
 
   // Game screen
-  "game.title": "Cool Sudoku",
+  "game.title": "数独酷",
   "game.noGame": "暂无进行中的游戏",
   "game.newGame": "新游戏",
   "game.restart": "重来",

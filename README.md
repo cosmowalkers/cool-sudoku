@@ -1,6 +1,6 @@
-# Cool Sudoku
+# 数独酷 (Cool Sudoku)
 
-一个使用 React Native + Expo 构建的数独游戏 App。
+一款专注体验的数独游戏，使用 React Native + Expo 构建。四级难度、智能提示、连胜挑战、成就收集，让每一局都有成就感。
 
 ## 功能
 
