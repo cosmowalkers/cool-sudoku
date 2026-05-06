@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.3] - 2026-05-06
+
+### Changed
+
+- App 名称改为"数独酷"
+- 全新 Logo：蓝紫渐变底 + 圆角 9 宫格 + 数字，活泼可爱风格
+- 添加 App 描述、iOS bundleIdentifier 等元信息
+- Splash 背景色适配设计系统色值
+
 ## [0.0.2] - 2026-05-06
 
 ### Added
