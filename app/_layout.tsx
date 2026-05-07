@@ -8,7 +8,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useLocaleStore } from "@/lib/i18n";
 import { useGameStore } from "@/stores/game-store";
 import { preloadSounds } from "@/lib/audio";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,7 +19,7 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const themeId = useLocaleStore((s) => s.themeId ?? "light");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={themeId === "dark" ? DarkTheme : DefaultTheme}>
       <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -61,7 +61,7 @@ export default function RootLayout() {
             options={{ presentation: "modal", headerShown: false }}
           />
         </Stack>
-        <StatusBar style="auto" />
+        <StatusBar style={themeId === "dark" ? "light" : "dark"} />
       </SafeAreaView>
     </ThemeProvider>
   );

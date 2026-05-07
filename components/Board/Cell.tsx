@@ -11,6 +11,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useGameStore } from "@/stores/game-store";
+import { useTheme } from "@/lib/themes";
+import type { ThemeColors } from "@/lib/themes";
 import type { CellState, Coordinate } from "@/lib/sudoku";
 
 interface CellProps {
@@ -51,19 +53,21 @@ function getHighlightType(
   return "none";
 }
 
-const highlightColors = {
-  selected: "#2563EB",
-  sameNumber: "#EDE9FE",
-  related: "#DBEAFE",
-  error: "#FEE2E2",
-  none: "transparent",
-};
+function getHighlightColors(colors: ThemeColors) {
+  return {
+    selected: colors.primary,
+    sameNumber: colors.secondaryLight,
+    related: colors.primaryLight,
+    error: colors.errorLight,
+    none: "transparent",
+  };
+}
 
-function getTextColor(cell: CellState): string {
-  if (cell.isError && cell.value) return "#DC2626";
-  if (cell.isHint) return "#059669";
-  if (cell.isGiven) return "#0F172A";
-  return "#2563EB";
+function getTextColor(cell: CellState, colors: ThemeColors): string {
+  if (cell.isError && cell.value) return colors.error;
+  if (cell.isHint) return colors.hint;
+  if (cell.isGiven) return colors.foreground;
+  return colors.userInput;
 }
 
 function isCellInCompletedGroup(
@@ -91,6 +95,7 @@ function CellComponent({ row, col, size }: CellProps) {
   const clearLastError = useGameStore((s) => s.clearLastError);
   const completedGroups = useGameStore((s) => s.completedGroups);
 
+  const { colors } = useTheme();
   const reducedMotion = useReducedMotion();
 
   // 动画 shared values
@@ -188,9 +193,10 @@ function CellComponent({ row, col, size }: CellProps) {
 
   if (!cell) return <View style={{ width: size, height: size }} />;
 
+  const highlightColors = getHighlightColors(colors);
   const highlight = getHighlightType(row, col, cell, selectedCell, board);
   const bgColor = highlightColors[highlight];
-  const textColor = getTextColor(cell);
+  const textColor = getTextColor(cell, colors);
 
   return (
     <Pressable
@@ -237,7 +243,7 @@ function CellComponent({ row, col, size }: CellProps) {
               key={n}
               style={[
                 styles.noteNumber,
-                { color: isSelected ? "#FFFFFF" : "#64748B" },
+                { color: isSelected ? "#FFFFFF" : colors.note },
               ]}
             >
               {cell.notes.includes(n) ? n : " "}
@@ -249,7 +255,7 @@ function CellComponent({ row, col, size }: CellProps) {
       <Animated.View
         style={[
           StyleSheet.absoluteFill,
-          { backgroundColor: '#2563EB' },
+          { backgroundColor: colors.primary },
           flashAnimatedStyle,
         ]}
         pointerEvents="none"

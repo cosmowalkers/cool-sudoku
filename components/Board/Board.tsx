@@ -2,12 +2,14 @@ import React, { useEffect } from "react";
 import { View, StyleSheet, useWindowDimensions } from "react-native";
 import { Cell } from "./Cell";
 import { useGameStore } from "@/stores/game-store";
+import { useTheme } from "@/lib/themes";
 
 const BOARD_PADDING = 16;
 const THICK_BORDER = 2;
 
 export function Board() {
   const { width: screenWidth } = useWindowDimensions();
+  const { colors } = useTheme();
   const completedGroups = useGameStore((s) => s.completedGroups);
   const clearCompletedGroups = useGameStore((s) => s.clearCompletedGroups);
 
@@ -27,7 +29,8 @@ export function Board() {
         {
           width: cellSize * 9 + 4 * THICK_BORDER,
           borderWidth: THICK_BORDER,
-          borderColor: "#334155",
+          borderColor: colors.borderThick,
+          backgroundColor: colors.surface,
         },
       ]}
     >
@@ -39,10 +42,10 @@ export function Board() {
               style={{
                 borderRightWidth:
                   col === 8 ? 0 : col % 3 === 2 ? THICK_BORDER : StyleSheet.hairlineWidth,
-                borderRightColor: col % 3 === 2 ? "#334155" : "#E2E8F0",
+                borderRightColor: col % 3 === 2 ? colors.borderThick : colors.border,
                 borderBottomWidth:
                   row === 8 ? 0 : row % 3 === 2 ? THICK_BORDER : StyleSheet.hairlineWidth,
-                borderBottomColor: row % 3 === 2 ? "#334155" : "#E2E8F0",
+                borderBottomColor: row % 3 === 2 ? colors.borderThick : colors.border,
               }}
             >
               <Cell row={row} col={col} size={cellSize} />
@@ -56,7 +59,6 @@ export function Board() {
 
 const styles = StyleSheet.create({
   board: {
-    backgroundColor: "#FFFFFF",
     alignSelf: "center",
   },
   row: {

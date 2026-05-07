@@ -12,9 +12,11 @@ const dictionaries: Record<Locale, Record<string, string>> = { zh, en };
 interface LocaleState {
   locale: Locale;
   isMuted: boolean;
+  themeId: string;
   setLocale: (locale: Locale) => void;
   setMuted: (muted: boolean) => void;
   toggleMute: () => void;
+  setTheme: (id: string) => void;
 }
 
 export const useLocaleStore = create<LocaleState>()(
@@ -22,9 +24,11 @@ export const useLocaleStore = create<LocaleState>()(
     (set) => ({
       locale: "zh",
       isMuted: false,
+      themeId: "light",
       setLocale: (locale) => set({ locale }),
       setMuted: (muted) => set({ isMuted: muted }),
       toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
+      setTheme: (id) => set({ themeId: id }),
     }),
     {
       name: "locale-store",

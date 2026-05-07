@@ -3,10 +3,12 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useGameStore } from "@/stores/game-store";
+import { useTheme } from "@/lib/themes";
 
 function AnimatedNumberButton({ num, onPress, disabled }: { num: number; onPress: () => void; disabled: boolean }) {
   const scale = useSharedValue(1);
   const reducedMotion = useReducedMotion();
+  const { colors } = useTheme();
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -20,8 +22,8 @@ function AnimatedNumberButton({ num, onPress, disabled }: { num: number; onPress
       disabled={disabled}
       accessibilityLabel={`Number ${num}${disabled ? ", completed" : ""}`}
     >
-      <Animated.View style={[styles.button, disabled && styles.buttonDisabled, animatedStyle]}>
-        <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>
+      <Animated.View style={[styles.button, { backgroundColor: colors.surface, borderColor: colors.border }, disabled && styles.buttonDisabled, animatedStyle]}>
+        <Text style={[styles.buttonText, { color: colors.foreground }, disabled && { color: colors.foregroundMuted }]}>
           {num}
         </Text>
       </Animated.View>

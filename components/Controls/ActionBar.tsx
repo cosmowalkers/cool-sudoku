@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Undo2, Eraser, PencilLine, Lightbulb } from "lucide-react-native";
 import { useGameStore } from "@/stores/game-store";
 import { useTranslation } from "@/lib/i18n";
+import { useTheme } from "@/lib/themes";
 
 interface ActionButtonProps {
   icon: React.ReactNode;
@@ -15,13 +16,14 @@ interface ActionButtonProps {
 }
 
 function ActionButton({ icon, label, onPress, disabled, active, badge, accessibilityLabel }: ActionButtonProps) {
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
         styles.actionButton,
-        active && styles.actionButtonActive,
+        active && { backgroundColor: colors.primaryLight },
         disabled && styles.actionButtonDisabled,
         pressed && !disabled && styles.actionButtonPressed,
       ]}
@@ -30,7 +32,7 @@ function ActionButton({ icon, label, onPress, disabled, active, badge, accessibi
       <View style={styles.iconContainer}>
         {icon}
         {badge !== undefined && (
-          <View style={styles.badge}>
+          <View style={[styles.badge, { backgroundColor: colors.primary }]}>
             <Text style={styles.badgeText}>{badge}</Text>
           </View>
         )}
@@ -38,8 +40,9 @@ function ActionButton({ icon, label, onPress, disabled, active, badge, accessibi
       <Text
         style={[
           styles.actionLabel,
-          active && styles.actionLabelActive,
-          disabled && styles.actionLabelDisabled,
+          { color: colors.foregroundMuted },
+          active && { color: colors.primary },
+          disabled && { color: colors.foregroundMuted },
         ]}
       >
         {label}
@@ -57,33 +60,34 @@ export function ActionBar() {
   const historyLength = useGameStore((s) => s.history.length);
   const hintsUsed = useGameStore((s) => s.hintsUsed);
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   const hintsRemaining = 3 - hintsUsed;
 
   return (
     <View style={styles.container}>
       <ActionButton
-        icon={<Undo2 size={20} strokeWidth={2} color={historyLength === 0 ? "#94A3B8" : "#0F172A"} />}
+        icon={<Undo2 size={20} strokeWidth={2} color={historyLength === 0 ? colors.foregroundMuted : colors.foreground} />}
         label={t("action.undo")}
         onPress={undo}
         disabled={historyLength === 0}
         accessibilityLabel={historyLength === 0 ? t("a11y.undoEmpty") : t("action.undo")}
       />
       <ActionButton
-        icon={<Eraser size={20} strokeWidth={2} color="#0F172A" />}
+        icon={<Eraser size={20} strokeWidth={2} color={colors.foreground} />}
         label={t("action.erase")}
         onPress={erase}
         accessibilityLabel={t("a11y.eraseCell")}
       />
       <ActionButton
-        icon={<PencilLine size={20} strokeWidth={2} color={isNotesMode ? "#2563EB" : "#0F172A"} />}
+        icon={<PencilLine size={20} strokeWidth={2} color={isNotesMode ? colors.primary : colors.foreground} />}
         label={t("action.notes")}
         onPress={toggleNotesMode}
         active={isNotesMode}
         accessibilityLabel={isNotesMode ? t("a11y.notesOn") : t("a11y.notesOff")}
       />
       <ActionButton
-        icon={<Lightbulb size={20} strokeWidth={2} color={hintsRemaining === 0 ? "#94A3B8" : "#0F172A"} />}
+        icon={<Lightbulb size={20} strokeWidth={2} color={hintsRemaining === 0 ? colors.foregroundMuted : colors.foreground} />}
         label={t("action.hint")}
         onPress={hint}
         disabled={hintsRemaining === 0}

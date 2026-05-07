@@ -3,9 +3,10 @@ import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useStatsStore, getOverallStats, getStatsByDifficulty, type GameResult } from "@/stores/stats-store";
 import { useAchievementStore, ACHIEVEMENTS } from "@/stores/achievement-store";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useTranslation, useLocaleStore } from "@/lib/i18n";
-import { Volume2, VolumeX } from "lucide-react-native";
+import { useTranslation } from "@/lib/i18n";
+import { useTheme } from "@/lib/themes";
+import { Settings as SettingsIcon } from "lucide-react-native";
+import { SettingsDrawer } from "@/components/Settings";
 import type { Difficulty } from "@/lib/sudoku";
 
 function formatTime(seconds: number): string {
@@ -36,17 +37,9 @@ function getDiffColor(d: Difficulty): string {
 }
 
 export default function StatsScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const { t, toggleLocale } = useTranslation();
-  const colors = {
-    bg: isDark ? "#0F172A" : "#F8FAFC",
-    surface: isDark ? "#1E293B" : "#FFFFFF",
-    text: isDark ? "#F1F5F9" : "#0F172A",
-    textMuted: isDark ? "#94A3B8" : "#64748B",
-    primary: isDark ? "#60A5FA" : "#2563EB",
-    border: isDark ? "#334155" : "#E2E8F0",
-  };
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   const tabs: { key: Difficulty | "all"; label: string }[] = [
     { key: "all", label: t("stats.all") },
@@ -55,9 +48,6 @@ export default function StatsScreen() {
     { key: "hard", label: t("diff.hard") },
     { key: "expert", label: t("diff.expert") },
   ];
-
-  const isMuted = useLocaleStore((s) => s.isMuted);
-  const toggleMute = useLocaleStore((s) => s.toggleMute);
 
   const history = useStatsStore((s) => s.history);
   const unlockedIds = useAchievementStore((s) => s.unlockedIds);
@@ -74,37 +64,45 @@ export default function StatsScreen() {
 
   if (history.length === 0) {
     return (
-      <View style={[styles.container, styles.center, { backgroundColor: colors.bg }]}>
-        <Text style={[styles.emptyTitle, { color: colors.text }]}>{t("stats.noGames")}</Text>
-        <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>{t("stats.startPlaying")}</Text>
-        <View style={styles.settingsRow}>
-          <Pressable onPress={toggleMute} style={[styles.langButton, { borderColor: colors.border }]}>
-            {isMuted ? <VolumeX size={16} color={colors.textMuted} /> : <Volume2 size={16} color={colors.textMuted} />}
-            <Text style={[styles.langButtonText, { color: colors.textMuted }]}>{isMuted ? t("settings.mute") : t("settings.unmute")}</Text>
-          </Pressable>
-          <Pressable onPress={toggleLocale} style={[styles.langButton, { borderColor: colors.border }]}>
-            <Text style={[styles.langButtonText, { color: colors.textMuted }]}>{t("lang.switch")}</Text>
+      <View style={[styles.container, styles.center, { backgroundColor: colors.background }]}>
+        <View style={styles.pageHeader}>
+          <Text style={[styles.pageTitle, { color: colors.foreground }]}>{t("tab.stats")}</Text>
+          <Pressable onPress={() => setSettingsVisible(true)} style={styles.settingsButton}>
+            <SettingsIcon size={22} color={colors.foregroundMuted} />
           </Pressable>
         </View>
+        <View style={[styles.center, { flex: 1 }]}>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t("stats.noGames")}</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.foregroundMuted }]}>{t("stats.startPlaying")}</Text>
+        </View>
+        <SettingsDrawer visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Page Header */}
+      <View style={styles.pageHeader}>
+        <Text style={[styles.pageTitle, { color: colors.foreground }]}>{t("tab.stats")}</Text>
+        <Pressable onPress={() => setSettingsVisible(true)} style={styles.settingsButton}>
+          <SettingsIcon size={22} color={colors.foregroundMuted} />
+        </Pressable>
+      </View>
+
       {/* 总体统计卡片 */}
       <View style={styles.overallGrid}>
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.statValue, { color: colors.text }]}>{overall.totalPlayed}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t("stats.games")}</Text>
+          <Text style={[styles.statValue, { color: colors.foreground }]}>{overall.totalPlayed}</Text>
+          <Text style={[styles.statLabel, { color: colors.foregroundMuted }]}>{t("stats.games")}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.statValue, { color: colors.text }]}>{overall.currentStreak}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t("stats.streak")}</Text>
+          <Text style={[styles.statValue, { color: colors.foreground }]}>{overall.currentStreak}</Text>
+          <Text style={[styles.statLabel, { color: colors.foregroundMuted }]}>{t("stats.streak")}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.statValue, { color: colors.text }]}>{overall.bestStreak}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t("stats.bestStreak")}</Text>
+          <Text style={[styles.statValue, { color: colors.foreground }]}>{overall.bestStreak}</Text>
+          <Text style={[styles.statLabel, { color: colors.foregroundMuted }]}>{t("stats.bestStreak")}</Text>
         </View>
       </View>
 
@@ -120,7 +118,7 @@ export default function StatsScreen() {
               activeTab === tab.key && { backgroundColor: colors.primary, borderColor: colors.primary },
             ]}
           >
-            <Text style={[styles.tabText, { color: colors.textMuted }, activeTab === tab.key && styles.tabTextActive]}>
+            <Text style={[styles.tabText, { color: colors.foregroundMuted }, activeTab === tab.key && styles.tabTextActive]}>
               {tab.label}
             </Text>
           </Pressable>
@@ -131,16 +129,16 @@ export default function StatsScreen() {
       {diffStats && (
         <View style={styles.diffStatsRow}>
           <View style={styles.diffStat}>
-            <Text style={[styles.diffStatValue, { color: colors.text }]}>{diffStats.gamesPlayed}</Text>
-            <Text style={[styles.diffStatLabel, { color: colors.textMuted }]}>{t("stats.played")}</Text>
+            <Text style={[styles.diffStatValue, { color: colors.foreground }]}>{diffStats.gamesPlayed}</Text>
+            <Text style={[styles.diffStatLabel, { color: colors.foregroundMuted }]}>{t("stats.played")}</Text>
           </View>
           <View style={styles.diffStat}>
-            <Text style={[styles.diffStatValue, { color: colors.text }]}>{formatTime(diffStats.bestTime)}</Text>
-            <Text style={[styles.diffStatLabel, { color: colors.textMuted }]}>{t("stats.best")}</Text>
+            <Text style={[styles.diffStatValue, { color: colors.foreground }]}>{formatTime(diffStats.bestTime)}</Text>
+            <Text style={[styles.diffStatLabel, { color: colors.foregroundMuted }]}>{t("stats.best")}</Text>
           </View>
           <View style={styles.diffStat}>
-            <Text style={[styles.diffStatValue, { color: colors.text }]}>{formatTime(diffStats.averageTime)}</Text>
-            <Text style={[styles.diffStatLabel, { color: colors.textMuted }]}>{t("stats.average")}</Text>
+            <Text style={[styles.diffStatValue, { color: colors.foreground }]}>{formatTime(diffStats.averageTime)}</Text>
+            <Text style={[styles.diffStatLabel, { color: colors.foregroundMuted }]}>{t("stats.average")}</Text>
           </View>
         </View>
       )}
@@ -152,7 +150,7 @@ export default function StatsScreen() {
           renderItem={({ item }: { item: GameResult }) => (
             <View style={[styles.historyItem, { borderBottomColor: colors.border }]}>
               <View style={styles.historyLeft}>
-                <Text style={[styles.historyDate, { color: colors.textMuted }]}>{formatDate(item.completedAt, t)}</Text>
+                <Text style={[styles.historyDate, { color: colors.foregroundMuted }]}>{formatDate(item.completedAt, t)}</Text>
                 <View style={[styles.diffBadge, { backgroundColor: getDiffColor(item.difficulty) }]}>
                   <Text style={styles.diffBadgeText}>
                     {t("diff." + item.difficulty)}
@@ -160,19 +158,19 @@ export default function StatsScreen() {
                 </View>
               </View>
               <View style={styles.historyRight}>
-                <Text style={[styles.historyTime, { color: colors.text }]}>{formatTime(item.elapsedTime)}</Text>
-                <Text style={[styles.historyMistakes, { color: colors.textMuted }]}>{t("stats.err", { count: item.mistakes })}</Text>
+                <Text style={[styles.historyTime, { color: colors.foreground }]}>{formatTime(item.elapsedTime)}</Text>
+                <Text style={[styles.historyMistakes, { color: colors.foregroundMuted }]}>{t("stats.err", { count: item.mistakes })}</Text>
               </View>
             </View>
           )}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>{t("stats.noDiffGames")}</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.foregroundMuted }]}>{t("stats.noDiffGames")}</Text>
             </View>
           }
           ListFooterComponent={
             <View style={styles.achievementSection}>
-              <Text style={[styles.achievementTitle, { color: colors.text }]}>
+              <Text style={[styles.achievementTitle, { color: colors.foreground }]}>
                 {t("achievement.progress", { count: unlockedIds.length })}
               </Text>
               <View style={styles.achievementGrid}>
@@ -191,7 +189,7 @@ export default function StatsScreen() {
                       <Text style={[styles.achievementIcon, !unlocked && styles.achievementLocked]}>
                         {unlocked ? a.icon : "?"}
                       </Text>
-                      <Text style={[styles.achievementName, { color: unlocked ? colors.text : colors.textMuted }]} numberOfLines={1}>
+                      <Text style={[styles.achievementName, { color: unlocked ? colors.foreground : colors.foregroundMuted }]} numberOfLines={1}>
                         {unlocked ? t(a.nameKey) : "???"}
                       </Text>
                     </Pressable>
@@ -203,15 +201,7 @@ export default function StatsScreen() {
         />
       </View>
 
-      <View style={styles.settingsRow}>
-        <Pressable onPress={toggleMute} style={[styles.langButton, { borderColor: colors.border }]}>
-          {isMuted ? <VolumeX size={16} color={colors.textMuted} /> : <Volume2 size={16} color={colors.textMuted} />}
-          <Text style={[styles.langButtonText, { color: colors.textMuted }]}>{isMuted ? t("settings.mute") : t("settings.unmute")}</Text>
-        </Pressable>
-        <Pressable onPress={toggleLocale} style={[styles.langButton, { borderColor: colors.border }]}>
-          <Text style={[styles.langButtonText, { color: colors.textMuted }]}>{t("lang.switch")}</Text>
-        </Pressable>
-      </View>
+      <SettingsDrawer visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
     </View>
   );
 }
@@ -219,6 +209,9 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FAFC", paddingTop: 16 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  pageHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 8 },
+  pageTitle: { fontSize: 20, fontWeight: "700" },
+  settingsButton: { padding: 8, minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
   emptyTitle: { fontSize: 20, fontWeight: "600", color: "#0F172A", marginBottom: 8 },
   emptySubtitle: { fontSize: 14, color: "#64748B" },
   overallGrid: { flexDirection: "row", paddingHorizontal: 16, gap: 12, marginBottom: 16 },
@@ -227,7 +220,6 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12, color: "#64748B", marginTop: 4 },
   tabs: { flexDirection: "row", paddingHorizontal: 16, gap: 8, marginBottom: 12 },
   tab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E2E8F0" },
-  tabActive: { backgroundColor: "#2563EB", borderColor: "#2563EB" },
   tabText: { fontSize: 13, color: "#64748B", fontWeight: "500" },
   tabTextActive: { color: "#FFFFFF" },
   diffStatsRow: { flexDirection: "row", paddingHorizontal: 16, gap: 12, marginBottom: 12 },
@@ -243,9 +235,6 @@ const styles = StyleSheet.create({
   historyRight: { flexDirection: "row", alignItems: "center", gap: 12 },
   historyTime: { fontSize: 14, fontWeight: "600", color: "#0F172A", fontVariant: ["tabular-nums"] },
   historyMistakes: { fontSize: 12, color: "#64748B", width: 40 },
-  settingsRow: { flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 16, marginBottom: 16 },
-  langButton: { flexDirection: "row", alignItems: "center", gap: 6, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: "#E2E8F0" },
-  langButtonText: { fontSize: 14, fontWeight: "500", color: "#64748B" },
   achievementSection: { paddingHorizontal: 0, paddingTop: 16, paddingBottom: 8 },
   achievementTitle: { fontSize: 16, fontWeight: "600", marginBottom: 12 },
   achievementGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

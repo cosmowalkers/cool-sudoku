@@ -137,8 +137,16 @@ export const en: Record<string, string> = {
   "result.share": "Share",
 
   // Settings
+  "settings.title": "Settings",
   "settings.mute": "Mute",
   "settings.unmute": "Unmute",
+  "settings.theme": "Theme",
+  "settings.sound": "Sound",
+  "settings.language": "Language",
+
+  // Themes
+  "theme.light": "Light",
+  "theme.dark": "Dark",
 
   // Language
   "lang.switch": "中文",

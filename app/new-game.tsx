@@ -3,14 +3,14 @@ import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from "rea
 import { useRouter } from "expo-router";
 import { X } from "lucide-react-native";
 import { useGameStore } from "@/stores/game-store";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useTranslation } from "@/lib/i18n";
+import { useTheme } from "@/lib/themes";
 import type { Difficulty } from "@/lib/sudoku";
 
 export default function NewGameScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   const difficulties: { key: Difficulty; label: string; description: string }[] = [
     { key: "easy", label: t("diff.easy"), description: t("diff.easy.desc") },
@@ -18,15 +18,6 @@ export default function NewGameScreen() {
     { key: "hard", label: t("diff.hard"), description: t("diff.hard.desc") },
     { key: "expert", label: t("diff.expert"), description: t("diff.expert.desc") },
   ];
-  const isDark = colorScheme === "dark";
-  const colors = {
-    bg: isDark ? "#0F172A" : "#F8FAFC",
-    surface: isDark ? "#1E293B" : "#FFFFFF",
-    text: isDark ? "#F1F5F9" : "#0F172A",
-    textMuted: isDark ? "#94A3B8" : "#64748B",
-    primary: isDark ? "#60A5FA" : "#2563EB",
-    border: isDark ? "#334155" : "#E2E8F0",
-  };
 
   const newGame = useGameStore((s) => s.newGame);
   const currentDifficulty = useGameStore((s) => s.difficulty);
@@ -58,19 +49,19 @@ export default function NewGameScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{t("newGame.title")}</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>{t("newGame.title")}</Text>
         <Pressable
           onPress={() => router.back()}
           style={styles.closeButton}
           accessibilityLabel={t("a11y.close")}
         >
-          <X size={24} color={colors.text} />
+          <X size={24} color={colors.foreground} />
         </Pressable>
       </View>
 
-      <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t("newGame.chooseDifficulty")}</Text>
+      <Text style={[styles.subtitle, { color: colors.foregroundMuted }]}>{t("newGame.chooseDifficulty")}</Text>
 
       <View style={styles.cards}>
         {difficulties.map((d) => (
@@ -84,8 +75,8 @@ export default function NewGameScreen() {
             onPress={() => handleSelect(d.key)}
             disabled={isGenerating}
           >
-            <Text style={[styles.cardTitle, { color: colors.text }]}>{d.label}</Text>
-            <Text style={[styles.cardDescription, { color: colors.textMuted }]}>{d.description}</Text>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>{d.label}</Text>
+            <Text style={[styles.cardDescription, { color: colors.foregroundMuted }]}>{d.description}</Text>
           </Pressable>
         ))}
       </View>
@@ -93,7 +84,7 @@ export default function NewGameScreen() {
       {isGenerating && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textMuted }]}>{t("newGame.generating")}</Text>
+          <Text style={[styles.loadingText, { color: colors.foregroundMuted }]}>{t("newGame.generating")}</Text>
         </View>
       )}
     </View>

@@ -11,7 +11,7 @@
   </defs>
 
   <!-- 圆角背景 -->
-  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="120" fill="url(#bg)"/>
 
   <!-- 3x3 网格，居中，边距 212px，网格区域 600x600 -->
   <!-- 每格 180x180，间距 30 -->

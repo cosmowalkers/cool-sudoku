@@ -11,9 +11,9 @@ import { UnlockOverlay } from "@/components/Achievement";
 import { useGameStore } from "@/stores/game-store";
 import { useStatsStore } from "@/stores/stats-store";
 import { useGameTimer } from "@/hooks/use-game-timer";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useTranslation } from "@/lib/i18n";
+import { useTheme } from "@/lib/themes";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -24,20 +24,10 @@ function formatTime(seconds: number): string {
 export default function GameScreen() {
   const router = useRouter();
   const tabBarHeight = useBottomTabBarHeight();
-  const colorScheme = useColorScheme();
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const reducedMotion = useReducedMotion();
   useGameTimer();
-
-  const isDark = colorScheme === "dark";
-  const colors = {
-    bg: isDark ? "#0F172A" : "#F8FAFC",
-    surface: isDark ? "#1E293B" : "#FFFFFF",
-    text: isDark ? "#F1F5F9" : "#0F172A",
-    textMuted: isDark ? "#94A3B8" : "#64748B",
-    primary: isDark ? "#60A5FA" : "#2563EB",
-    border: isDark ? "#334155" : "#E2E8F0",
-  };
 
   const difficulty = useGameStore((s) => s.difficulty);
   const elapsedTime = useGameStore((s) => s.elapsedTime);
@@ -90,9 +80,9 @@ export default function GameScreen() {
   // 没有进行中的游戏
   if (!difficulty) {
     return (
-      <View style={[styles.container, styles.center, { backgroundColor: colors.bg }]}>
-        <Text style={[styles.emptyTitle, { color: colors.text }]}>{t("game.title")}</Text>
-        <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>{t("game.noGame")}</Text>
+      <View style={[styles.container, styles.center, { backgroundColor: colors.background }]}>
+        <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t("game.title")}</Text>
+        <Text style={[styles.emptySubtitle, { color: colors.foregroundMuted }]}>{t("game.noGame")}</Text>
         <Pressable
           style={[styles.newGameButton, { backgroundColor: colors.primary }]}
           onPress={() => router.push("/new-game")}
@@ -104,11 +94,11 @@ export default function GameScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingBottom: tabBarHeight + 8, backgroundColor: colors.bg }]}>
+    <View style={[styles.container, { paddingBottom: tabBarHeight + 8, backgroundColor: colors.background }]}>
       {/* 顶部信息栏 */}
       <View style={styles.infoBar}>
         <View style={styles.infoLeft}>
-          <Text style={[styles.difficultyLabel, { color: colors.textMuted }]}>
+          <Text style={[styles.difficultyLabel, { color: colors.foregroundMuted }]}>
             {t("diff." + difficulty)}
           </Text>
           <StreakBadge />
@@ -126,24 +116,24 @@ export default function GameScreen() {
             style={styles.restartButton}
             accessibilityLabel={t("game.restart")}
           >
-            <RotateCcw size={16} color={colors.textMuted} />
+            <RotateCcw size={16} color={colors.foregroundMuted} />
           </Pressable>
         </View>
         <View style={styles.infoCenter}>
-          <Text style={[styles.timer, { color: colors.text }]}>{formatTime(elapsedTime)}</Text>
+          <Text style={[styles.timer, { color: colors.foreground }]}>{formatTime(elapsedTime)}</Text>
           <Pressable
             onPress={isPaused ? resume : pause}
             style={styles.pauseButton}
             accessibilityLabel={isPaused ? t("a11y.resume") : t("a11y.pause")}
           >
             {isPaused ? (
-              <Play size={18} color={colors.text} />
+              <Play size={18} color={colors.foreground} />
             ) : (
-              <Pause size={18} color={colors.text} />
+              <Pause size={18} color={colors.foreground} />
             )}
           </Pressable>
         </View>
-        <Text style={[styles.mistakesLabel, { color: colors.textMuted }]}>
+        <Text style={[styles.mistakesLabel, { color: colors.foregroundMuted }]}>
           {t("game.errors", { count: mistakes })}
         </Text>
       </View>
@@ -160,9 +150,9 @@ export default function GameScreen() {
 
       {/* 暂停覆盖层 */}
       {isPaused && !isCompleted && (
-        <View style={[styles.overlay, { backgroundColor: colors.bg }]}>
-          <Text style={[styles.overlayTitle, { color: colors.text }]}>{t("game.paused")}</Text>
-          <Text style={[styles.overlaySubtitle, { color: colors.textMuted }]}>
+        <View style={[styles.overlay, { backgroundColor: colors.background }]}>
+          <Text style={[styles.overlayTitle, { color: colors.foreground }]}>{t("game.paused")}</Text>
+          <Text style={[styles.overlaySubtitle, { color: colors.foregroundMuted }]}>
             {t("diff." + difficulty)} • {formatTime(elapsedTime)}
           </Text>
           <Pressable style={[styles.resumeButton, { backgroundColor: colors.primary }]} onPress={resume}>

@@ -137,8 +137,16 @@ export const zh: Record<string, string> = {
   "result.share": "分享",
 
   // 设置
+  "settings.title": "设置",
   "settings.mute": "静音",
   "settings.unmute": "开启声音",
+  "settings.theme": "主题",
+  "settings.sound": "声音",
+  "settings.language": "语言",
+
+  // 主题
+  "theme.light": "白天",
+  "theme.dark": "黑夜",
 
   // Language
   "lang.switch": "English",
