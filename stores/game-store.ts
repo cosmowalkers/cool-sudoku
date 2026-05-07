@@ -446,12 +446,12 @@ export const useGameStore = create<GameState>()(
   },
 
   restart: () => {
-    const { board, solution, difficulty } = get();
+    const { board, difficulty } = get();
     if (!difficulty) return;
     const resetBoard: GameBoard = board.map((row) =>
       row.map((cell) =>
         cell.isGiven
-          ? cell
+          ? { ...cell, isError: false }
           : { value: null, isGiven: false, isHint: false, notes: [], isError: false }
       )
     );
@@ -465,6 +465,8 @@ export const useGameStore = create<GameState>()(
       isPaused: false,
       isCompleted: false,
       history: [],
+      lastErrorCell: null,
+      completedGroups: [],
     });
   },
 
