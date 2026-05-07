@@ -10,6 +10,7 @@ import "react-native-reanimated";
 
 import { useLocaleStore } from "@/lib/i18n";
 import { useGameStore } from "@/stores/game-store";
+import { useTheme } from "@/lib/themes";
 import { preloadSounds } from "@/lib/audio";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../global.css";
@@ -51,9 +52,11 @@ export default function RootLayout() {
     return null;
   }
 
+  const { colors } = useTheme();
+
   return (
     <ThemeProvider value={themeId === "dark" ? DarkTheme : DefaultTheme}>
-      <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
+      <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.background }}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
