@@ -2,7 +2,7 @@
   "expo": {
     "name": "数独酷",
     "slug": "cool-sudoku",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "一款专注体验的数独游戏。四级难度、智能提示、连胜挑战、成就收集，让每一局都有成就感。",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -18,7 +18,7 @@
     },
     "android": {
       "package": "com.cosmowalkers.coolsudoku",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#3B82F6",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
