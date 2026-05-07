@@ -21,6 +21,7 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const themeId = useLocaleStore((s) => s.themeId ?? "light");
+  const { colors } = useTheme();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -51,8 +52,6 @@ export default function RootLayout() {
   if (!ready) {
     return null;
   }
-
-  const { colors } = useTheme();
 
   return (
     <ThemeProvider value={themeId === "dark" ? DarkTheme : DefaultTheme}>
