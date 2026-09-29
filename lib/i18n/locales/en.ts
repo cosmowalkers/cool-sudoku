@@ -71,6 +71,9 @@ export const en: Record<string, string> = {
   "a11y.number": "Number {num}",
   "a11y.progress": "{count} of {total} cells filled",
 
+  // Common
+  "common.ok": "OK",
+
   // Feedback banner
   "feedback.group.row": "Row complete!",
   "feedback.group.col": "Column complete!",

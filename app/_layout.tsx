@@ -12,6 +12,7 @@ import { useLocaleStore } from "@/lib/i18n";
 import { useGameStore } from "@/stores/game-store";
 import { useTheme } from "@/lib/themes";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { DialogHost } from "@/components/Dialog";
 import "../global.css";
 
 export const unstable_settings = {
@@ -56,6 +57,7 @@ export default function RootLayout() {
             options={{ presentation: "modal", headerShown: false }}
           />
         </Stack>
+        <DialogHost />
         <StatusBar style={themeId === "dark" ? "light" : "dark"} />
       </SafeAreaView>
     </ThemeProvider>

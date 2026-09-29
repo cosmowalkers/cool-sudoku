@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useStatsStore, getOverallStats, getStatsByDifficulty, type GameResult } from "@/stores/stats-store";
 import { useAchievementStore, ACHIEVEMENTS } from "@/stores/achievement-store";
 import { useTranslation } from "@/lib/i18n";
 import { useTheme } from "@/lib/themes";
+import { showAlert } from "@/lib/dialog";
 import { Settings as SettingsIcon } from "lucide-react-native";
 import { SettingsDrawer } from "@/components/Settings";
 import type { Difficulty } from "@/lib/sudoku";
@@ -182,7 +183,11 @@ export default function StatsScreen() {
                       style={[styles.achievementItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
                       onPress={() => {
                         if (unlocked) {
-                          Alert.alert(t(a.nameKey), `${t(a.descKey)}\n\n${t("achievement.unlockedOn", { date: unlockedDates[a.id] || "" })}`);
+                          showAlert({
+                            title: t(a.nameKey),
+                            message: `${t(a.descKey)}\n\n${t("achievement.unlockedOn", { date: unlockedDates[a.id] || "" })}`,
+                            okText: t("common.ok"),
+                          });
                         }
                       }}
                     >

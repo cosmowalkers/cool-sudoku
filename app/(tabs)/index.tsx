@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Pressable, StyleSheet, Alert, Share, Platform } from "react-native";
+import { View, Text, Pressable, StyleSheet, Share, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Pause, Play, RotateCcw, Heart, Download } from "lucide-react-native";
@@ -17,6 +17,7 @@ import { useGameTimer } from "@/hooks/use-game-timer";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useLocaleStore, useTranslation } from "@/lib/i18n";
 import { useTheme } from "@/lib/themes";
+import { showAlert, showConfirm } from "@/lib/dialog";
 import type { Difficulty } from "@/lib/sudoku";
 import type { ThemeColors } from "@/lib/themes";
 
@@ -77,11 +78,12 @@ export default function GameScreen() {
   useEffect(() => {
     if (celebrationPhase === "result" && lastMilestone) {
       const timer = setTimeout(() => {
-        Alert.alert(
-          `🔥 ${t("streak.days", { count: lastMilestone })}`,
-          t(`streak.milestone.${lastMilestone}`),
-          [{ text: "OK", onPress: clearMilestone }]
-        );
+        showAlert({
+          title: `🔥 ${t("streak.days", { count: lastMilestone })}`,
+          message: t(`streak.milestone.${lastMilestone}`),
+          okText: t("common.ok"),
+          onClose: clearMilestone,
+        });
       }, 1000);
       return () => clearTimeout(timer);
     }
@@ -141,14 +143,14 @@ export default function GameScreen() {
           <StreakBadge />
           <Pressable
             onPress={() => {
-              Alert.alert(
-                t("game.restartConfirm"),
-                t("game.restartMsg"),
-                [
-                  { text: t("newGame.cancel"), style: "cancel" },
-                  { text: t("game.restart"), style: "destructive", onPress: restart },
-                ]
-              );
+              showConfirm({
+                title: t("game.restartConfirm"),
+                message: t("game.restartMsg"),
+                confirmText: t("game.restart"),
+                cancelText: t("newGame.cancel"),
+                destructive: true,
+                onConfirm: restart,
+              });
             }}
             style={styles.restartButton}
             accessibilityLabel={t("game.restart")}

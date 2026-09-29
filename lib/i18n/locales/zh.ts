@@ -71,6 +71,9 @@ export const zh: Record<string, string> = {
   "a11y.number": "数字 {num}",
   "a11y.progress": "已完成 {count} / {total} 格",
 
+  // 通用
+  "common.ok": "知道了",
+
   // 反馈条
   "feedback.group.row": "完成一行！",
   "feedback.group.col": "完成一列！",

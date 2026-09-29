@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import { X } from "lucide-react-native";
@@ -7,6 +7,7 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useGameStore } from "@/stores/game-store";
 import { useTranslation } from "@/lib/i18n";
 import { useTheme } from "@/lib/themes";
+import { showConfirm } from "@/lib/dialog";
 import type { ThemeColors } from "@/lib/themes";
 import type { Difficulty } from "@/lib/sudoku";
 
@@ -97,21 +98,17 @@ export default function NewGameScreen() {
 
   const handleSelect = (difficulty: Difficulty) => {
     if (currentDifficulty && !isCompleted) {
-      Alert.alert(
-        t("newGame.confirmTitle"),
-        t("newGame.confirmMsg"),
-        [
-          { text: t("newGame.cancel"), style: "cancel" },
-          {
-            text: t("newGame.startNew"),
-            style: "destructive",
-            onPress: () => {
-              newGame(difficulty);
-              router.back();
-            },
-          },
-        ]
-      );
+      showConfirm({
+        title: t("newGame.confirmTitle"),
+        message: t("newGame.confirmMsg"),
+        confirmText: t("newGame.startNew"),
+        cancelText: t("newGame.cancel"),
+        destructive: true,
+        onConfirm: () => {
+          newGame(difficulty);
+          router.back();
+        },
+      });
     } else {
       newGame(difficulty);
       router.back();
