@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet, Modal } from "react-native";
-import { X, Volume2, VolumeX, Sun, Moon, Globe } from "lucide-react-native";
+import { X, Volume2, VolumeX, Sun, Moon, Globe, Heart, Shield } from "lucide-react-native";
 import { useTranslation, useLocaleStore } from "@/lib/i18n";
-import { useTheme, type ThemeId } from "@/lib/themes";
+import { useTheme } from "@/lib/themes";
 
 interface SettingsDrawerProps {
   visible: boolean;
@@ -14,12 +14,17 @@ export function SettingsDrawer({ visible, onClose }: SettingsDrawerProps) {
   const { colors, themeId, setTheme } = useTheme();
   const isMuted = useLocaleStore((s) => s.isMuted);
   const toggleMute = useLocaleStore((s) => s.toggleMute);
+  const lifeMode = useLocaleStore((s) => s.lifeMode);
+  const setLifeMode = useLocaleStore((s) => s.setLifeMode);
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={[styles.drawer, { backgroundColor: colors.surface }]}>
+          {/* Handle bar */}
+          <View style={[styles.handleBar, { backgroundColor: colors.border }]} />
+
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.foreground }]}>{t("settings.title")}</Text>
@@ -34,8 +39,8 @@ export function SettingsDrawer({ visible, onClose }: SettingsDrawerProps) {
             <View style={styles.row}>
               <Pressable
                 style={[
-                  styles.themeOption,
-                  { borderColor: themeId === "light" ? colors.primary : colors.border },
+                  styles.optionCard,
+                  { backgroundColor: themeId === "light" ? colors.primaryLight : colors.background, borderColor: themeId === "light" ? colors.primary : colors.border },
                   themeId === "light" && { borderWidth: 2 },
                 ]}
                 onPress={() => setTheme("light")}
@@ -45,8 +50,8 @@ export function SettingsDrawer({ visible, onClose }: SettingsDrawerProps) {
               </Pressable>
               <Pressable
                 style={[
-                  styles.themeOption,
-                  { borderColor: themeId === "dark" ? colors.primary : colors.border },
+                  styles.optionCard,
+                  { backgroundColor: themeId === "dark" ? colors.primaryLight : colors.background, borderColor: themeId === "dark" ? colors.primary : colors.border },
                   themeId === "dark" && { borderWidth: 2 },
                 ]}
                 onPress={() => setTheme("dark")}
@@ -57,11 +62,42 @@ export function SettingsDrawer({ visible, onClose }: SettingsDrawerProps) {
             </View>
           </View>
 
+          {/* 生命模式 */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionLabel, { color: colors.foregroundMuted }]}>{t("settings.lifeMode")}</Text>
+            <View style={styles.row}>
+              <Pressable
+                style={[
+                  styles.optionCard,
+                  { backgroundColor: lifeMode === "casual" ? colors.funcHintLight : colors.background, borderColor: lifeMode === "casual" ? colors.funcHint : colors.border },
+                  lifeMode === "casual" && { borderWidth: 2 },
+                ]}
+                onPress={() => setLifeMode("casual")}
+              >
+                <Shield size={18} color={lifeMode === "casual" ? colors.funcHint : colors.foregroundMuted} />
+                <Text style={[styles.optionText, { color: colors.foreground }]}>{t("settings.lifeMode.casual")}</Text>
+                <Text style={[styles.optionDesc, { color: colors.foregroundMuted }]}>{t("settings.lifeMode.casual.desc")}</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.optionCard,
+                  { backgroundColor: lifeMode === "challenge" ? colors.funcEraseLight : colors.background, borderColor: lifeMode === "challenge" ? colors.funcErase : colors.border },
+                  lifeMode === "challenge" && { borderWidth: 2 },
+                ]}
+                onPress={() => setLifeMode("challenge")}
+              >
+                <Heart size={18} color={lifeMode === "challenge" ? colors.funcErase : colors.foregroundMuted} />
+                <Text style={[styles.optionText, { color: colors.foreground }]}>{t("settings.lifeMode.challenge")}</Text>
+                <Text style={[styles.optionDesc, { color: colors.foregroundMuted }]}>{t("settings.lifeMode.challenge.desc")}</Text>
+              </Pressable>
+            </View>
+          </View>
+
           {/* 声音 */}
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: colors.foregroundMuted }]}>{t("settings.sound")}</Text>
             <Pressable
-              style={[styles.menuItem, { borderColor: colors.border }]}
+              style={[styles.menuItem, { backgroundColor: colors.background, borderColor: colors.border }]}
               onPress={toggleMute}
             >
               {isMuted ? <VolumeX size={20} color={colors.foregroundMuted} /> : <Volume2 size={20} color={colors.primary} />}
@@ -75,7 +111,7 @@ export function SettingsDrawer({ visible, onClose }: SettingsDrawerProps) {
           <View style={styles.section}>
             <Text style={[styles.sectionLabel, { color: colors.foregroundMuted }]}>{t("settings.language")}</Text>
             <Pressable
-              style={[styles.menuItem, { borderColor: colors.border }]}
+              style={[styles.menuItem, { backgroundColor: colors.background, borderColor: colors.border }]}
               onPress={toggleLocale}
             >
               <Globe size={20} color={colors.primary} />
@@ -103,11 +139,18 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.4)",
   },
   drawer: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 40,
+  },
+  handleBar: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 12,
   },
   header: {
     flexDirection: "row",
@@ -116,8 +159,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "800",
   },
   closeButton: {
     padding: 8,
@@ -130,29 +173,33 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionLabel: {
-    fontSize: 13,
-    fontWeight: "500",
+    fontSize: 12,
+    fontWeight: "600",
     marginBottom: 8,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   row: {
     flexDirection: "row",
     gap: 12,
   },
-  themeOption: {
+  optionCard: {
     flex: 1,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 6,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
   },
   optionText: {
-    fontSize: 15,
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  optionDesc: {
+    fontSize: 10,
+    textAlign: "center",
+    paddingHorizontal: 4,
   },
   menuItem: {
     flexDirection: "row",
@@ -160,7 +207,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
   },
   menuItemText: {

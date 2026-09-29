@@ -69,6 +69,12 @@ export const zh: Record<string, string> = {
   "a11y.hintRemaining": "提示，剩余 {count} 次",
   "a11y.numberComplete": "数字 {num}，已完成",
   "a11y.number": "数字 {num}",
+  "a11y.progress": "已完成 {count} / {total} 格",
+
+  // 反馈条
+  "feedback.group.row": "完成一行！",
+  "feedback.group.col": "完成一列！",
+  "feedback.group.box": "完成九宫格！",
 
   // 成就 - 入门
   "achievement.first-win.name": "初出茅庐",
@@ -150,4 +156,16 @@ export const zh: Record<string, string> = {
 
   // Language
   "lang.switch": "English",
+
+  // Game Over
+  "game.gameOver": "游戏结束",
+  "game.gameOverMsg": "很遗憾，生命值耗尽了",
+  "game.tryAgain": "再试一次",
+
+  // Life mode
+  "settings.lifeMode": "生命模式",
+  "settings.lifeMode.casual": "休闲",
+  "settings.lifeMode.casual.desc": "无限生命，轻松游玩",
+  "settings.lifeMode.challenge": "挑战",
+  "settings.lifeMode.challenge.desc": "3条命，失误游戏结束",
 };

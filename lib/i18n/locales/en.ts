@@ -69,6 +69,12 @@ export const en: Record<string, string> = {
   "a11y.hintRemaining": "Hint, {count} remaining",
   "a11y.numberComplete": "Number {num}, completed",
   "a11y.number": "Number {num}",
+  "a11y.progress": "{count} of {total} cells filled",
+
+  // Feedback banner
+  "feedback.group.row": "Row complete!",
+  "feedback.group.col": "Column complete!",
+  "feedback.group.box": "Box complete!",
 
   // Achievements - Beginner
   "achievement.first-win.name": "First Win",
@@ -150,4 +156,16 @@ export const en: Record<string, string> = {
 
   // Language
   "lang.switch": "中文",
+
+  // Game Over
+  "game.gameOver": "Game Over",
+  "game.gameOverMsg": "You ran out of lives",
+  "game.tryAgain": "Try Again",
+
+  // Life mode
+  "settings.lifeMode": "Life Mode",
+  "settings.lifeMode.casual": "Casual",
+  "settings.lifeMode.casual.desc": "Unlimited lives, play freely",
+  "settings.lifeMode.challenge": "Challenge",
+  "settings.lifeMode.challenge.desc": "3 lives, game over on failure",
 };

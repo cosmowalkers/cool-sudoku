@@ -1,11 +1,82 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useRouter } from "expo-router";
 import { X } from "lucide-react-native";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useGameStore } from "@/stores/game-store";
 import { useTranslation } from "@/lib/i18n";
 import { useTheme } from "@/lib/themes";
+import type { ThemeColors } from "@/lib/themes";
 import type { Difficulty } from "@/lib/sudoku";
+
+const SHADOW_H = 4;
+
+const DIFF_META: Record<Difficulty, { emoji: string }> = {
+  easy: { emoji: "🌱" },
+  medium: { emoji: "🔥" },
+  hard: { emoji: "💀" },
+  expert: { emoji: "⚡" },
+};
+
+function getDiffColor(diff: Difficulty, colors: ThemeColors): string {
+  const map: Record<Difficulty, string> = {
+    easy: colors.diffEasy,
+    medium: colors.diffMedium,
+    hard: colors.diffHard,
+    expert: colors.diffExpert,
+  };
+  return map[diff];
+}
+
+function darken(hex: string, amount: number): string {
+  const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - amount);
+  const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - amount);
+  const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - amount);
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+function DifficultyCard({ diff, label, desc, onPress, disabled }: {
+  diff: Difficulty; label: string; desc: string; onPress: () => void; disabled: boolean;
+}) {
+  const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
+  const translateY = useSharedValue(0);
+
+  const color = getDiffColor(diff, colors);
+  const shadow = darken(color, 40);
+
+  const bodyStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const shadowStyle = useAnimatedStyle(() => ({
+    height: SHADOW_H - translateY.value,
+  }));
+
+  return (
+    <Pressable
+      onPressIn={() => {
+        if (!reducedMotion && !disabled) translateY.value = withTiming(SHADOW_H, { duration: 80 });
+      }}
+      onPressOut={() => {
+        if (!reducedMotion) translateY.value = withTiming(0, { duration: 100 });
+      }}
+      onPress={onPress}
+      disabled={disabled}
+      style={styles.cardWrapper}
+    >
+      <Animated.View style={[styles.card, { backgroundColor: color }, bodyStyle]}>
+        <Text style={styles.cardEmoji}>{DIFF_META[diff].emoji}</Text>
+        <View style={styles.cardContent}>
+          <Text style={styles.cardTitle}>{label}</Text>
+          <Text style={styles.cardDescription}>{desc}</Text>
+        </View>
+      </Animated.View>
+      <Animated.View style={[styles.cardShadow, { backgroundColor: shadow }, shadowStyle]} />
+    </Pressable>
+  );
+}
 
 export default function NewGameScreen() {
   const router = useRouter();
@@ -25,7 +96,6 @@ export default function NewGameScreen() {
   const isGenerating = useGameStore((s) => s.isGenerating);
 
   const handleSelect = (difficulty: Difficulty) => {
-    // 如果有进行中的游戏，确认是否放弃
     if (currentDifficulty && !isCompleted) {
       Alert.alert(
         t("newGame.confirmTitle"),
@@ -65,26 +135,21 @@ export default function NewGameScreen() {
 
       <View style={styles.cards}>
         {difficulties.map((d) => (
-          <Pressable
+          <DifficultyCard
             key={d.key}
-            style={({ pressed }) => [
-              styles.card,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-              pressed && styles.cardPressed,
-            ]}
+            diff={d.key}
+            label={d.label}
+            desc={d.description}
             onPress={() => handleSelect(d.key)}
             disabled={isGenerating}
-          >
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>{d.label}</Text>
-            <Text style={[styles.cardDescription, { color: colors.foregroundMuted }]}>{d.description}</Text>
-          </Pressable>
+          />
         ))}
       </View>
 
       {isGenerating && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.foregroundMuted }]}>{t("newGame.generating")}</Text>
+          <ActivityIndicator size="large" color="#FFFFFF" />
+          <Text style={styles.loadingText}>{t("newGame.generating")}</Text>
         </View>
       )}
     </View>
@@ -94,7 +159,6 @@ export default function NewGameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
     paddingHorizontal: 16,
     paddingTop: 16,
   },
@@ -107,7 +171,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0F172A",
   },
   closeButton: {
     padding: 8,
@@ -118,43 +181,56 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: "#64748B",
     marginBottom: 16,
   },
   cards: {
-    gap: 12,
+    gap: 14,
+  },
+  cardWrapper: {
+    height: 80 + SHADOW_H,
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    height: 80,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    gap: 14,
   },
-  cardPressed: {
-    backgroundColor: "#DBEAFE",
-    borderColor: "#2563EB",
+  cardShadow: {
+    marginHorizontal: 4,
+    height: SHADOW_H,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+  cardEmoji: {
+    fontSize: 28,
+  },
+  cardContent: {
+    flex: 1,
   },
   cardTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "#0F172A",
-    marginBottom: 4,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: 2,
   },
   cardDescription: {
-    fontSize: 14,
-    color: "#64748B",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.85)",
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(0,0,0,0.4)",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 10,
+    borderRadius: 16,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
     fontWeight: "500",
+    color: "#FFFFFF",
   },
 });

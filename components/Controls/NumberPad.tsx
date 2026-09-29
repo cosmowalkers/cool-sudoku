@@ -1,32 +1,61 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useGameStore } from "@/stores/game-store";
 import { useTheme } from "@/lib/themes";
 
+const SHADOW_HEIGHT = 3;
+
+/** 数字键盘整体高度，供反馈条定位时避让 */
+export const NUMPAD_HEIGHT = 48 + SHADOW_HEIGHT;
+
 function AnimatedNumberButton({ num, onPress, disabled }: { num: number; onPress: () => void; disabled: boolean }) {
-  const scale = useSharedValue(1);
+  const translateY = useSharedValue(0);
   const reducedMotion = useReducedMotion();
   const { colors } = useTheme();
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+  const bodyStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const shadowStyle = useAnimatedStyle(() => ({
+    height: SHADOW_HEIGHT - translateY.value,
   }));
 
   return (
     <Pressable
-      onPressIn={() => { if (!reducedMotion && !disabled) scale.value = withSpring(0.9); }}
-      onPressOut={() => { if (!reducedMotion) scale.value = withSpring(1); }}
+      onPressIn={() => {
+        if (!reducedMotion && !disabled)
+          translateY.value = withTiming(SHADOW_HEIGHT, { duration: 80 });
+      }}
+      onPressOut={() => {
+        if (!reducedMotion)
+          translateY.value = withTiming(0, { duration: 100 });
+      }}
       onPress={onPress}
       disabled={disabled}
       accessibilityLabel={`Number ${num}${disabled ? ", completed" : ""}`}
+      style={[styles.wrapper, disabled && styles.wrapperDisabled]}
     >
-      <Animated.View style={[styles.button, { backgroundColor: colors.surface, borderColor: colors.border }, disabled && styles.buttonDisabled, animatedStyle]}>
-        <Text style={[styles.buttonText, { color: colors.foreground }, disabled && { color: colors.foregroundMuted }]}>
+      <Animated.View
+        style={[
+          styles.button,
+          { backgroundColor: colors.numpadBg },
+          bodyStyle,
+        ]}
+      >
+        <Text style={[styles.buttonText, { color: colors.numpadText }]}>
           {num}
         </Text>
       </Animated.View>
+      <Animated.View
+        style={[
+          styles.shadow,
+          { backgroundColor: colors.numpadShadow },
+          shadowStyle,
+        ]}
+      />
     </Pressable>
   );
 }
@@ -36,7 +65,6 @@ export function NumberPad() {
   const board = useGameStore((s) => s.board);
   const solution = useGameStore((s) => s.solution);
 
-  // 计算每个数字已完成的数量（正确放置的次数）
   const completedNumbers = React.useMemo(() => {
     const counts: Record<number, number> = {};
     for (let n = 1; n <= 9; n++) {
@@ -74,28 +102,30 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     justifyContent: "space-evenly",
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
+  },
+  wrapper: {
+    height: 48 + SHADOW_HEIGHT,
+  },
+  wrapperDisabled: {
+    opacity: 0.3,
   },
   button: {
     width: 36,
-    height: 44,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderRadius: 12,
   },
-  buttonDisabled: {
-    opacity: 0.3,
+  shadow: {
+    width: 36,
+    height: SHADOW_HEIGHT,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
   },
   buttonText: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#0F172A",
+    fontSize: 22,
+    fontWeight: "700",
     fontVariant: ["tabular-nums"],
-  },
-  buttonTextDisabled: {
-    color: "#94A3B8",
   },
 });

@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Difficulty } from "@/lib/sudoku";
-import { useAchievementStore } from "@/stores/achievement-store";
 
 export interface GameResult {
   difficulty: Difficulty;
@@ -80,10 +79,6 @@ export const useStatsStore = create<StatsState>()(
           lastCompletedDate: today,
           lastMilestone: hitMilestone ? newStreak : null,
         }));
-
-        setTimeout(() => {
-          useAchievementStore.getState().checkAchievements();
-        }, 100);
       },
       clearMilestone: () => set({ lastMilestone: null }),
     }),

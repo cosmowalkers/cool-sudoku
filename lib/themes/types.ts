@@ -15,6 +15,36 @@ export interface ThemeColors {
   borderThick: string;
   note: string;
   hint: string;
+
+  // 功能色 — ActionBar 按钮
+  funcUndo: string;
+  funcUndoLight: string;
+  funcErase: string;
+  funcEraseLight: string;
+  funcNotes: string;
+  funcNotesLight: string;
+  funcHint: string;
+  funcHintLight: string;
+
+  // 难度色
+  diffEasy: string;
+  diffMedium: string;
+  diffHard: string;
+  diffExpert: string;
+
+  // 生命值
+  life: string;
+  lifeLost: string;
+
+  // 数字键盘
+  numpadBg: string;
+  numpadShadow: string;
+  numpadText: string;
+
+  // 反馈条
+  success: string;
+  successShadow: string;
+  errorShadow: string;
 }
 
 export interface Theme {

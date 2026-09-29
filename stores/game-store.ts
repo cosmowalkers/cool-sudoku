@@ -5,9 +5,11 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { playSound } from "@/lib/audio";
+import { useLocaleStore, type LifeMode } from "@/lib/i18n";
 import type { Board, CellState, Coordinate, Difficulty, GameBoard } from "@/lib/sudoku";
 import { createPuzzle, isComplete } from "@/lib/sudoku";
-import { useStatsStore } from "@/stores/stats-store";
+import { useStatsStore, type GameResult } from "@/stores/stats-store";
+import { useAchievementStore } from "@/stores/achievement-store";
 
 // --- Haptic 反馈 ---
 
@@ -30,6 +32,17 @@ function hapticMedium() {
   if (Platform.OS !== "web") {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }
+}
+
+/**
+ * 记录一局成绩并触发成就检测。
+ * 放在这里而不是 stats-store 内部，是为了打断
+ * stats-store -> achievement-store -> stats-store 的循环依赖。
+ */
+function recordCompletedGame(result: Omit<GameResult, "completedAt">) {
+  useStatsStore.getState().recordGame(result);
+  // 成就检测读取的是最新 stats 快照，沿用原先的延迟触发
+  setTimeout(() => useAchievementStore.getState().checkAchievements(), 100);
 }
 
 // --- 辅助函数 ---
@@ -127,6 +140,20 @@ interface HistoryEntry {
   board: GameBoard;
 }
 
+export type FeedbackGroupType = "row" | "col" | "box";
+
+export interface GameFeedback {
+  id: number;
+  groupType: FeedbackGroupType;
+}
+
+// 反馈条只在离散、低频事件上触发，用自增 id 保证同类事件连续触发时能重放动画
+let feedbackSeq = 0;
+function makeFeedback(groupType: FeedbackGroupType): GameFeedback {
+  feedbackSeq += 1;
+  return { id: feedbackSeq, groupType };
+}
+
 interface GameState {
   // 游戏数据
   board: GameBoard;
@@ -139,6 +166,7 @@ interface GameState {
   isGenerating: boolean;
   lastErrorCell: Coordinate | null;
   completedGroups: { type: 'row' | 'col' | 'box'; index: number }[];
+  feedback: GameFeedback | null;
 
   // 游戏进度
   mistakes: number;
@@ -164,6 +192,7 @@ interface GameState {
   tick: () => void;
   clearLastError: () => void;
   clearCompletedGroups: () => void;
+  clearFeedback: () => void;
 }
 
 /** 检测填数后哪些 group（行/列/宫）刚好被填满 */
@@ -201,6 +230,22 @@ function detectCompletedGroups(board: GameBoard, row: number, col: number): { ty
 
 // --- Store ---
 
+/** 一局可用生命数 */
+export const MAX_LIVES = 3;
+
+/**
+ * 生命是否已耗尽。故意不把 gameOver 存成状态字段：它完全由
+ * (生命模式, 错误数, 是否完成) 推导得出，一旦存成字段就会带来两个问题 ——
+ * 持久化丢失后“死局复活”，以及切回休闲模式后卡在结算页出不来。
+ */
+export function isGameOverNow(
+  mistakes: number,
+  isCompleted: boolean,
+  lifeMode: LifeMode
+): boolean {
+  return lifeMode === "challenge" && mistakes >= MAX_LIVES && !isCompleted;
+}
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
@@ -213,6 +258,7 @@ export const useGameStore = create<GameState>()(
   isGenerating: false,
   lastErrorCell: null,
   completedGroups: [],
+  feedback: null,
   mistakes: 0,
   hintsUsed: 0,
   elapsedTime: 0,
@@ -225,8 +271,11 @@ export const useGameStore = create<GameState>()(
   },
 
   placeNumber: (num) => {
-    const { selectedCell, board, solution, isNotesMode } = get();
+    const { selectedCell, board, solution, isNotesMode, mistakes, isCompleted } = get();
     if (!selectedCell) return;
+
+    // 生命已耗尽就不允许再落子，否则会出现“已经输了却还能接着填、甚至通关”
+    if (isGameOverNow(mistakes, isCompleted, useLocaleStore.getState().lifeMode)) return;
 
     const { row, col } = selectedCell;
     const cell = board[row][col];
@@ -278,7 +327,7 @@ export const useGameStore = create<GameState>()(
       let totalMistakes = 0;
       // 此刻已完成，统计整局中的实际错误不再需要（因为完成意味着全对）
       // mistakes 改为统计"当前棋盘上与 solution 不一致的格子数"（完成时为 0）
-      useStatsStore.getState().recordGame({
+      recordCompletedGame({
         difficulty: get().difficulty!,
         elapsedTime: get().elapsedTime,
         mistakes: get().mistakes,
@@ -286,21 +335,30 @@ export const useGameStore = create<GameState>()(
       });
     }
 
+    const newMistakes = hasConflict ? get().mistakes + 1 : get().mistakes;
+    const lifeMode = useLocaleStore.getState().lifeMode;
+    const gameOver = isGameOverNow(newMistakes, completed, lifeMode);
+
+    // 通关/生命耗尽都有全屏 overlay 接管，这里只处理行列宫完成
+    const feedback = detectedGroups.length > 0 ? makeFeedback(detectedGroups[0].type) : null;
+
     set({
       board: newBoard,
-      mistakes: hasConflict ? get().mistakes + 1 : get().mistakes,
+      mistakes: newMistakes,
       isCompleted: completed,
       lastErrorCell: hasConflict ? { row, col } : null,
       ...(detectedGroups.length > 0 ? { completedGroups: detectedGroups } : {}),
+      ...(feedback ? { feedback } : {}),
     });
 
-    // Haptic 反馈 + 音效
-    // 所有填数都有相同的轻反馈，只有规则冲突时才有错误反馈
     hapticLight();
     playSound("pop");
     if (hasConflict) {
       hapticError();
       playSound("error");
+    }
+    if (gameOver) {
+      hapticError();
     }
     if (detectedGroups.length > 0) {
       playSound("lineClear");
@@ -389,7 +447,7 @@ export const useGameStore = create<GameState>()(
     const completed = isComplete(boardValues, solution);
 
     if (completed) {
-      useStatsStore.getState().recordGame({
+      recordCompletedGame({
         difficulty: get().difficulty!,
         elapsedTime: get().elapsedTime,
         mistakes: get().mistakes,
@@ -442,6 +500,7 @@ export const useGameStore = create<GameState>()(
       isPaused: false,
       isCompleted: false,
       history: [],
+      feedback: null,
     });
   },
 
@@ -467,6 +526,7 @@ export const useGameStore = create<GameState>()(
       history: [],
       lastErrorCell: null,
       completedGroups: [],
+      feedback: null,
     });
   },
 
@@ -479,8 +539,9 @@ export const useGameStore = create<GameState>()(
   },
 
   tick: () => {
-    const { isPaused, isCompleted } = get();
-    if (!isPaused && !isCompleted) {
+    const { isPaused, isCompleted, mistakes } = get();
+    const lifeMode = useLocaleStore.getState().lifeMode;
+    if (!isPaused && !isGameOverNow(mistakes, isCompleted, lifeMode)) {
       set((state) => ({ elapsedTime: state.elapsedTime + 1 }));
     }
   },
@@ -491,6 +552,10 @@ export const useGameStore = create<GameState>()(
 
   clearCompletedGroups: () => {
     set({ completedGroups: [] });
+  },
+
+  clearFeedback: () => {
+    set({ feedback: null });
   },
     }),
     {
