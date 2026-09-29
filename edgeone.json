@@ -1,5 +1,6 @@
 {
   "buildCommand": "npx expo export -p web",
+  "installCommand": "npm install --omit=dev",
   "outputDirectory": "dist",
   "nodeVersion": "22.11.0",
   "rewrites": [
