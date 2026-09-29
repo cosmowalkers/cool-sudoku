@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Pressable, StyleSheet, Alert, Share } from "react-native";
+import { View, Text, Pressable, StyleSheet, Alert, Share, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { Pause, Play, RotateCcw, Heart } from "lucide-react-native";
+import { Pause, Play, RotateCcw, Heart, Download } from "lucide-react-native";
 import { Board } from "@/components/Board";
 import { NumberPad, ActionBar, NUMPAD_HEIGHT } from "@/components/Controls";
 import { Confetti, ResultCard } from "@/components/Celebration";
@@ -10,6 +10,7 @@ import { StreakBadge } from "@/components/Streak";
 import { FeedbackBanner } from "@/components/Feedback";
 import { ProgressBar } from "@/components/Progress";
 import { UnlockOverlay } from "@/components/Achievement";
+import { DownloadSheet } from "@/components/Download";
 import { MAX_LIVES, isGameOverNow, useGameStore } from "@/stores/game-store";
 import { useStatsStore } from "@/stores/stats-store";
 import { useGameTimer } from "@/hooks/use-game-timer";
@@ -59,6 +60,7 @@ export default function GameScreen() {
 
   // 庆祝流程
   const [celebrationPhase, setCelebrationPhase] = useState<"none" | "confetti" | "result">("none");
+  const [downloadVisible, setDownloadVisible] = useState(false);
 
   useEffect(() => {
     if (isCompleted) {
@@ -104,6 +106,26 @@ export default function GameScreen() {
         >
           <Text style={styles.newGameButtonText}>{t("game.newGame")}</Text>
         </Pressable>
+
+        {/* 网页端下载入口：扫码装 App */}
+        {Platform.OS === "web" && (
+          <Pressable
+            style={styles.downloadButton}
+            onPress={() => setDownloadVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t("download.entry")}
+          >
+            <Download size={16} color={colors.foregroundMuted} />
+            <Text style={[styles.downloadButtonText, { color: colors.foregroundMuted }]}>
+              {t("download.entry")}
+            </Text>
+          </Pressable>
+        )}
+
+        <DownloadSheet
+          visible={downloadVisible}
+          onClose={() => setDownloadVisible(false)}
+        />
       </View>
     );
   }
@@ -359,6 +381,18 @@ const styles = StyleSheet.create({
   newGameButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
+    fontWeight: "600",
+  },
+  downloadButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  downloadButtonText: {
+    fontSize: 14,
     fontWeight: "600",
   },
   gameOverEmoji: {

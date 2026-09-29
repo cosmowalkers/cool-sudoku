@@ -76,6 +76,16 @@ export const zh: Record<string, string> = {
   "feedback.group.col": "完成一列！",
   "feedback.group.box": "完成九宫格！",
 
+  // 下载入口
+  "download.entry": "下载 App",
+  "download.title": "下载「数独酷」",
+  "download.android": "Android 版",
+  "download.ios": "iOS 版",
+  "download.scan": "用手机扫码安装",
+  "download.direct": "直接下载安装包",
+  "download.comingSoon": "敬请期待",
+  "download.wechatHint": "在微信里扫码若无法下载，请改用手机浏览器打开",
+
   // 成就 - 入门
   "achievement.first-win.name": "初出茅庐",
   "achievement.first-win.desc": "完成第一局",

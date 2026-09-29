@@ -76,6 +76,16 @@ export const en: Record<string, string> = {
   "feedback.group.col": "Column complete!",
   "feedback.group.box": "Box complete!",
 
+  // Download entry
+  "download.entry": "Get the App",
+  "download.title": "Download Cool Sudoku",
+  "download.android": "Android",
+  "download.ios": "iOS",
+  "download.scan": "Scan with your phone to install",
+  "download.direct": "Download the APK",
+  "download.comingSoon": "Coming soon",
+  "download.wechatHint": "If the download doesn't start inside WeChat, open this page in your phone browser",
+
   // Achievements - Beginner
   "achievement.first-win.name": "First Win",
   "achievement.first-win.desc": "Complete your first game",
