@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet, Modal } from "react-native";
-import { X, Volume2, VolumeX, Sun, Moon, Globe, Heart, Shield } from "lucide-react-native";
+import { X, Sun, Moon, Globe, Heart, Shield } from "lucide-react-native";
 import { useTranslation, useLocaleStore } from "@/lib/i18n";
 import { useTheme } from "@/lib/themes";
 
@@ -12,8 +12,6 @@ interface SettingsDrawerProps {
 export function SettingsDrawer({ visible, onClose }: SettingsDrawerProps) {
   const { t, toggleLocale, locale } = useTranslation();
   const { colors, themeId, setTheme } = useTheme();
-  const isMuted = useLocaleStore((s) => s.isMuted);
-  const toggleMute = useLocaleStore((s) => s.toggleMute);
   const lifeMode = useLocaleStore((s) => s.lifeMode);
   const setLifeMode = useLocaleStore((s) => s.setLifeMode);
 
@@ -91,20 +89,6 @@ export function SettingsDrawer({ visible, onClose }: SettingsDrawerProps) {
                 <Text style={[styles.optionDesc, { color: colors.foregroundMuted }]}>{t("settings.lifeMode.challenge.desc")}</Text>
               </Pressable>
             </View>
-          </View>
-
-          {/* 声音 */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: colors.foregroundMuted }]}>{t("settings.sound")}</Text>
-            <Pressable
-              style={[styles.menuItem, { backgroundColor: colors.background, borderColor: colors.border }]}
-              onPress={toggleMute}
-            >
-              {isMuted ? <VolumeX size={20} color={colors.foregroundMuted} /> : <Volume2 size={20} color={colors.primary} />}
-              <Text style={[styles.menuItemText, { color: colors.foreground }]}>
-                {isMuted ? t("settings.mute") : t("settings.unmute")}
-              </Text>
-            </Pressable>
           </View>
 
           {/* 语言 */}

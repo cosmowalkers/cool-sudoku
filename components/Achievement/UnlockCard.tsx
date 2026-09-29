@@ -3,7 +3,6 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useAchievementStore, ACHIEVEMENTS } from "@/stores/achievement-store";
 import { useTranslation } from "@/lib/i18n";
-import { playSound } from "@/lib/audio";
 
 export function UnlockOverlay() {
   const { t } = useTranslation();
@@ -15,7 +14,6 @@ export function UnlockOverlay() {
   useEffect(() => {
     if (newlyUnlocked.length > 0) {
       setCurrentIndex(0);
-      playSound("achievement");
     }
   }, [newlyUnlocked]);
 
@@ -28,7 +26,6 @@ export function UnlockOverlay() {
   const handleDismiss = () => {
     if (currentIndex < newlyUnlocked.length - 1) {
       setCurrentIndex((i) => i + 1);
-      playSound("achievement");
     } else {
       clearNewlyUnlocked();
     }

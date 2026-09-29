@@ -4,7 +4,6 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
-import { playSound } from "@/lib/audio";
 import { useLocaleStore, type LifeMode } from "@/lib/i18n";
 import type { Board, CellState, Coordinate, Difficulty, GameBoard } from "@/lib/sudoku";
 import { createPuzzle, isComplete } from "@/lib/sudoku";
@@ -352,20 +351,14 @@ export const useGameStore = create<GameState>()(
     });
 
     hapticLight();
-    playSound("pop");
     if (hasConflict) {
       hapticError();
-      playSound("error");
     }
     if (gameOver) {
       hapticError();
     }
-    if (detectedGroups.length > 0) {
-      playSound("lineClear");
-    }
     if (completed) {
       hapticSuccess();
-      playSound("complete");
     }
   },
 
@@ -410,7 +403,6 @@ export const useGameStore = create<GameState>()(
     updateConflicts(previous.board);
 
     set({ board: previous.board, history: newHistory });
-    playSound("undo");
   },
 
   hint: () => {
@@ -462,12 +454,10 @@ export const useGameStore = create<GameState>()(
       isCompleted: completed,
     });
 
-    // Haptic 反馈 + 音效
+    // Haptic 反馈
     hapticMedium();
-    playSound("pop");
     if (completed) {
       hapticSuccess();
-      playSound("complete");
     }
   },
 

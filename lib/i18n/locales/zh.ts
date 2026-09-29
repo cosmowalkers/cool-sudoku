@@ -144,10 +144,7 @@ export const zh: Record<string, string> = {
 
   // 设置
   "settings.title": "设置",
-  "settings.mute": "静音",
-  "settings.unmute": "开启声音",
   "settings.theme": "主题",
-  "settings.sound": "声音",
   "settings.language": "语言",
 
   // 主题

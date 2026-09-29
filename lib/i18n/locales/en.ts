@@ -144,10 +144,7 @@ export const en: Record<string, string> = {
 
   // Settings
   "settings.title": "Settings",
-  "settings.mute": "Mute",
-  "settings.unmute": "Unmute",
   "settings.theme": "Theme",
-  "settings.sound": "Sound",
   "settings.language": "Language",
 
   // Themes

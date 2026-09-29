@@ -11,7 +11,6 @@ import "react-native-reanimated";
 import { useLocaleStore } from "@/lib/i18n";
 import { useGameStore } from "@/stores/game-store";
 import { useTheme } from "@/lib/themes";
-import { preloadSounds } from "@/lib/audio";
 import { SafeAreaView } from "react-native-safe-area-context";
 import "../global.css";
 
@@ -42,12 +41,6 @@ export default function RootLayout() {
     const timeout = setTimeout(() => setReady(true), 2000);
     return () => clearTimeout(timeout);
   }, []);
-
-  useEffect(() => {
-    if (ready) {
-      preloadSounds();
-    }
-  }, [ready]);
 
   if (!ready) {
     return null;

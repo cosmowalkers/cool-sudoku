@@ -31,7 +31,6 @@ cd android && ./gradlew assembleRelease       # 本地打 APK
 
 ```
 lib/sudoku/         纯逻辑层：谜题生成、求解、校验（无 React 依赖）
-lib/audio/          音效引擎（expo-av，preload/play/mute）
 lib/i18n/           中英双语（Zustand store + 字典文件）
 stores/             Zustand stores
   game-store.ts       游戏状态（棋盘、选中、笔记、历史、计时）
@@ -66,6 +65,6 @@ app/new-game.tsx    难度选择 modal
 ## 注意事项
 
 - `newArchEnabled` 必须为 true（Reanimated 4.x 强制要求）
-- 音效文件在 `assets/sounds/` 目录为占位文件，需替换为真实音效
+- 音效功能已整体移除（`lib/audio/` 与 `assets/sounds/` 占位文件一并删除），后续迭代补真实音效时再重建
 - Lottie 动画文件 `assets/lottie/confetti.json` 为占位，需替换
 - react-native-view-shot 需要 development build（Expo Go 不支持）
