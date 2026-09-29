@@ -4,34 +4,29 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-na
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useGameStore } from "@/stores/game-store";
 import { useTheme } from "@/lib/themes";
-
-const SHADOW_HEIGHT = 3;
+import { PRESS_IN_MS, PRESS_OUT_MS, PRESS_SCALE, softShadow } from "@/lib/ui/press";
 
 /** 数字键盘整体高度，供反馈条定位时避让 */
-export const NUMPAD_HEIGHT = 48 + SHADOW_HEIGHT;
+export const NUMPAD_HEIGHT = 48;
 
 function AnimatedNumberButton({ num, onPress, disabled }: { num: number; onPress: () => void; disabled: boolean }) {
-  const translateY = useSharedValue(0);
+  const scale = useSharedValue(1);
   const reducedMotion = useReducedMotion();
   const { colors } = useTheme();
 
   const bodyStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const shadowStyle = useAnimatedStyle(() => ({
-    height: SHADOW_HEIGHT - translateY.value,
+    transform: [{ scale: scale.value }],
   }));
 
   return (
     <Pressable
       onPressIn={() => {
         if (!reducedMotion && !disabled)
-          translateY.value = withTiming(SHADOW_HEIGHT, { duration: 80 });
+          scale.value = withTiming(PRESS_SCALE, { duration: PRESS_IN_MS });
       }}
       onPressOut={() => {
         if (!reducedMotion)
-          translateY.value = withTiming(0, { duration: 100 });
+          scale.value = withTiming(1, { duration: PRESS_OUT_MS });
       }}
       onPress={onPress}
       disabled={disabled}
@@ -49,13 +44,6 @@ function AnimatedNumberButton({ num, onPress, disabled }: { num: number; onPress
           {num}
         </Text>
       </Animated.View>
-      <Animated.View
-        style={[
-          styles.shadow,
-          { backgroundColor: colors.numpadShadow },
-          shadowStyle,
-        ]}
-      />
     </Pressable>
   );
 }
@@ -105,7 +93,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   wrapper: {
-    height: 48 + SHADOW_HEIGHT,
+    height: 48,
   },
   wrapperDisabled: {
     opacity: 0.3,
@@ -116,12 +104,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
-  },
-  shadow: {
-    width: 36,
-    height: SHADOW_HEIGHT,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+    ...softShadow,
   },
   buttonText: {
     fontSize: 22,

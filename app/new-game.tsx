@@ -8,10 +8,9 @@ import { useGameStore } from "@/stores/game-store";
 import { useTranslation } from "@/lib/i18n";
 import { useTheme } from "@/lib/themes";
 import { showConfirm } from "@/lib/dialog";
+import { PRESS_IN_MS, PRESS_OUT_MS, PRESS_SCALE, softShadow } from "@/lib/ui/press";
 import type { ThemeColors } from "@/lib/themes";
 import type { Difficulty } from "@/lib/sudoku";
-
-const SHADOW_H = 4;
 
 const DIFF_META: Record<Difficulty, { emoji: string }> = {
   easy: { emoji: "🌱" },
@@ -30,38 +29,28 @@ function getDiffColor(diff: Difficulty, colors: ThemeColors): string {
   return map[diff];
 }
 
-function darken(hex: string, amount: number): string {
-  const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - amount);
-  const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - amount);
-  const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - amount);
-  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-}
-
 function DifficultyCard({ diff, label, desc, onPress, disabled }: {
   diff: Difficulty; label: string; desc: string; onPress: () => void; disabled: boolean;
 }) {
   const { colors } = useTheme();
   const reducedMotion = useReducedMotion();
-  const translateY = useSharedValue(0);
+  const scale = useSharedValue(1);
 
   const color = getDiffColor(diff, colors);
-  const shadow = darken(color, 40);
 
   const bodyStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const shadowStyle = useAnimatedStyle(() => ({
-    height: SHADOW_H - translateY.value,
+    transform: [{ scale: scale.value }],
   }));
 
   return (
     <Pressable
       onPressIn={() => {
-        if (!reducedMotion && !disabled) translateY.value = withTiming(SHADOW_H, { duration: 80 });
+        if (!reducedMotion && !disabled)
+          scale.value = withTiming(PRESS_SCALE, { duration: PRESS_IN_MS });
       }}
       onPressOut={() => {
-        if (!reducedMotion) translateY.value = withTiming(0, { duration: 100 });
+        if (!reducedMotion)
+          scale.value = withTiming(1, { duration: PRESS_OUT_MS });
       }}
       onPress={onPress}
       disabled={disabled}
@@ -74,7 +63,6 @@ function DifficultyCard({ diff, label, desc, onPress, disabled }: {
           <Text style={styles.cardDescription}>{desc}</Text>
         </View>
       </Animated.View>
-      <Animated.View style={[styles.cardShadow, { backgroundColor: shadow }, shadowStyle]} />
     </Pressable>
   );
 }
@@ -184,7 +172,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   cardWrapper: {
-    height: 80 + SHADOW_H,
+    height: 80,
   },
   card: {
     height: 80,
@@ -193,12 +181,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     gap: 14,
-  },
-  cardShadow: {
-    marginHorizontal: 4,
-    height: SHADOW_H,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    ...softShadow,
   },
   cardEmoji: {
     fontSize: 28,

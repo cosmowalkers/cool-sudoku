@@ -6,8 +6,7 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useGameStore } from "@/stores/game-store";
 import { useTranslation } from "@/lib/i18n";
 import { useTheme } from "@/lib/themes";
-
-const SHADOW_HEIGHT = 3;
+import { PRESS_IN_MS, PRESS_OUT_MS, PRESS_SCALE, softShadow } from "@/lib/ui/press";
 
 interface ActionButtonProps {
   icon: React.ReactNode;
@@ -18,31 +17,26 @@ interface ActionButtonProps {
   badge?: string;
   accessibilityLabel: string;
   bgColor: string;
-  shadowColor: string;
 }
 
-function ActionButton({ icon, label, onPress, disabled, active, badge, accessibilityLabel, bgColor, shadowColor }: ActionButtonProps) {
-  const translateY = useSharedValue(0);
+function ActionButton({ icon, label, onPress, disabled, active, badge, accessibilityLabel, bgColor }: ActionButtonProps) {
+  const scale = useSharedValue(1);
   const reducedMotion = useReducedMotion();
   const { colors } = useTheme();
 
   const bodyStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const shadowStyle = useAnimatedStyle(() => ({
-    height: SHADOW_HEIGHT - translateY.value,
+    transform: [{ scale: scale.value }],
   }));
 
   return (
     <Pressable
       onPressIn={() => {
         if (!reducedMotion && !disabled)
-          translateY.value = withTiming(SHADOW_HEIGHT, { duration: 80 });
+          scale.value = withTiming(PRESS_SCALE, { duration: PRESS_IN_MS });
       }}
       onPressOut={() => {
         if (!reducedMotion)
-          translateY.value = withTiming(0, { duration: 100 });
+          scale.value = withTiming(1, { duration: PRESS_OUT_MS });
       }}
       onPress={onPress}
       disabled={disabled}
@@ -62,7 +56,6 @@ function ActionButton({ icon, label, onPress, disabled, active, badge, accessibi
           {label}
         </Text>
       </Animated.View>
-      <Animated.View style={[styles.shadow, { backgroundColor: active ? shadowColor : colors.border }, shadowStyle]} />
     </Pressable>
   );
 }
@@ -89,7 +82,6 @@ export function ActionBar() {
         disabled={historyLength === 0}
         accessibilityLabel={historyLength === 0 ? t("a11y.undoEmpty") : t("action.undo")}
         bgColor={colors.funcUndo}
-        shadowColor={colors.funcUndoLight}
       />
       <ActionButton
         icon={<Eraser size={20} strokeWidth={2.5} color={colors.funcErase} />}
@@ -97,7 +89,6 @@ export function ActionBar() {
         onPress={erase}
         accessibilityLabel={t("a11y.eraseCell")}
         bgColor={colors.funcErase}
-        shadowColor={colors.funcEraseLight}
       />
       <ActionButton
         icon={<PencilLine size={20} strokeWidth={2.5} color={isNotesMode ? "#FFFFFF" : colors.funcNotes} />}
@@ -106,7 +97,6 @@ export function ActionBar() {
         active={isNotesMode}
         accessibilityLabel={isNotesMode ? t("a11y.notesOn") : t("a11y.notesOff")}
         bgColor={colors.funcNotes}
-        shadowColor={colors.funcNotesLight}
       />
       <ActionButton
         icon={<Lightbulb size={20} strokeWidth={2.5} color={hintsRemaining === 0 ? colors.foregroundMuted : colors.funcHint} />}
@@ -116,7 +106,6 @@ export function ActionBar() {
         badge={String(hintsRemaining)}
         accessibilityLabel={t("a11y.hintRemaining", { count: hintsRemaining })}
         bgColor={colors.funcHint}
-        shadowColor={colors.funcHintLight}
       />
     </View>
   );
@@ -130,7 +119,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   wrapper: {
-    height: 56 + SHADOW_HEIGHT,
+    height: 56,
     minWidth: 64,
   },
   wrapperDisabled: {
@@ -144,12 +133,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     minHeight: 56,
-  },
-  shadow: {
-    marginHorizontal: 2,
-    height: SHADOW_HEIGHT,
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
+    ...softShadow,
   },
   iconContainer: {
     position: "relative",

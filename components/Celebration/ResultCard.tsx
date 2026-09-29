@@ -5,6 +5,7 @@ import { Share2, Star } from "lucide-react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useTranslation } from "@/lib/i18n";
 import { useTheme } from "@/lib/themes";
+import { softShadow } from "@/lib/ui/press";
 import { useGameStore } from "@/stores/game-store";
 import { getStatsByDifficulty, useStatsStore } from "@/stores/stats-store";
 
@@ -19,8 +20,6 @@ function getStarCount(mistakes: number): number {
   if (mistakes === 1) return 2;
   return 1;
 }
-
-const SHADOW_H = 4;
 
 interface ResultCardProps {
   onShare?: () => void;
@@ -100,15 +99,12 @@ export function ResultCard({ onShare }: ResultCardProps) {
               <Text style={[styles.shareButtonText, { color: colors.foregroundMuted }]}>{t("result.share")}</Text>
             </Pressable>
           )}
-          <View>
-            <Pressable
-              style={[styles.newGameButton, { backgroundColor: colors.primary }]}
-              onPress={() => router.push("/new-game")}
-            >
-              <Text style={styles.newGameButtonText}>{t("game.newGame")}</Text>
-            </Pressable>
-            <View style={[styles.newGameShadow, { backgroundColor: colors.numpadShadow }]} />
-          </View>
+          <Pressable
+            style={[styles.newGameButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.push("/new-game")}
+          >
+            <Text style={styles.newGameButtonText}>{t("game.newGame")}</Text>
+          </Pressable>
         </View>
       </View>
     </Animated.View>
@@ -206,12 +202,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingVertical: 13,
     borderRadius: 14,
-  },
-  newGameShadow: {
-    marginHorizontal: 3,
-    height: SHADOW_H,
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
+    ...softShadow,
   },
   newGameButtonText: {
     fontSize: 15,
