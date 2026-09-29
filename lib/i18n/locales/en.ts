@@ -86,6 +86,7 @@ export const en: Record<string, string> = {
   "download.ios": "iOS",
   "download.scan": "Scan with your phone to install",
   "download.direct": "Download the APK",
+  "download.fallback": "Slow or blocked? Try the mirror (GitHub)",
   "download.comingSoon": "Coming soon",
   "download.wechatHint": "If the download doesn't start inside WeChat, open this page in your phone browser",
 

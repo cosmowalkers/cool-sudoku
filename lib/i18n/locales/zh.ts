@@ -86,6 +86,7 @@ export const zh: Record<string, string> = {
   "download.ios": "iOS 版",
   "download.scan": "用手机扫码安装",
   "download.direct": "直接下载安装包",
+  "download.fallback": "下载慢或打不开？试试备用源（GitHub）",
   "download.comingSoon": "敬请期待",
   "download.wechatHint": "在微信里扫码若无法下载，请改用手机浏览器打开",
 

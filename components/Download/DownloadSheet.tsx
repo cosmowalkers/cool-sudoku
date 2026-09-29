@@ -15,8 +15,8 @@ export function DownloadSheet({ visible, onClose }: DownloadSheetProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
 
-  const androidUrl = APP_DOWNLOADS.android;
-  const iosUrl = APP_DOWNLOADS.ios;
+  const android = APP_DOWNLOADS.android;
+  const iosUrl = APP_DOWNLOADS.ios.url;
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -41,21 +41,31 @@ export function DownloadSheet({ visible, onClose }: DownloadSheetProps) {
               </Text>
             </View>
 
-            {androidUrl ? (
+            {android.url ? (
               <>
                 <View style={[styles.qrPanel, { borderColor: colors.border }]}>
-                  <QrCode value={androidUrl} />
+                  <QrCode value={android.url} />
                   <Text style={[styles.qrHint, { color: colors.foregroundMuted }]}>
                     {t("download.scan")}
                   </Text>
                 </View>
                 <Pressable
                   style={[styles.primaryButton, { backgroundColor: colors.primary }]}
-                  onPress={() => Linking.openURL(androidUrl)}
+                  onPress={() => Linking.openURL(android.url!)}
                 >
                   <Download size={18} color="#FFFFFF" />
                   <Text style={styles.primaryButtonText}>{t("download.direct")}</Text>
                 </Pressable>
+                {android.fallback ? (
+                  <Pressable
+                    style={styles.fallbackButton}
+                    onPress={() => Linking.openURL(android.fallback!)}
+                  >
+                    <Text style={[styles.fallbackText, { color: colors.foregroundMuted }]}>
+                      {t("download.fallback")}
+                    </Text>
+                  </Pressable>
+                ) : null}
                 <Text style={[styles.note, { color: colors.foregroundMuted }]}>
                   {t("download.wechatHint")}
                 </Text>
@@ -177,6 +187,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
     marginTop: 8,
+  },
+  fallbackButton: {
+    alignSelf: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 2,
+  },
+  fallbackText: {
+    fontSize: 13,
+    textDecorationLine: "underline",
   },
   comingSoon: {
     fontSize: 15,
